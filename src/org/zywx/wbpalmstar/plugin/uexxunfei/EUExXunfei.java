@@ -14,6 +14,8 @@ import com.iflytek.cloud.SpeechSynthesizer;
 import com.iflytek.cloud.SpeechUtility;
 import com.iflytek.cloud.SynthesizerListener;
 
+import org.json.JSONObject;
+import org.zywx.wbpalmstar.base.BDebug;
 import org.zywx.wbpalmstar.engine.DataHelper;
 import org.zywx.wbpalmstar.engine.EBrowserView;
 import org.zywx.wbpalmstar.engine.universalex.EUExBase;
@@ -217,7 +219,15 @@ public class EUExXunfei extends EUExBase {
             @Override
             public void onResult(RecognizerResult recognizerResult, boolean isLast) {
                 RecognizeResultVO resultVO = new RecognizeResultVO();
-                resultVO.text = recognizerResult.getResultString();
+                JSONObject jsonObject=null;
+                try {
+                    jsonObject=new JSONObject(recognizerResult.getResultString());
+                    resultVO.text=jsonObject;
+                }catch (Exception e){
+                    if (BDebug.DEBUG){
+                        e.printStackTrace();
+                    }
+                }
                 resultVO.isLast = isLast;
                 callBackPluginJs(JsConst.ON_RECOGNIZE_RESULT,DataHelper.gson.toJson(resultVO));
             }

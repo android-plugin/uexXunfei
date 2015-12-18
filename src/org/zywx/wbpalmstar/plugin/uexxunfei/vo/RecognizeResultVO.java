@@ -19,6 +19,8 @@
 
 package org.zywx.wbpalmstar.plugin.uexxunfei.vo;
 
+import org.json.JSONObject;
+
 import java.io.Serializable;
 
 /**
@@ -28,7 +30,7 @@ public class RecognizeResultVO implements Serializable{
 
     public boolean isLast;
 
-    public String text;
+    public JSONObject text;
 
 
 }
