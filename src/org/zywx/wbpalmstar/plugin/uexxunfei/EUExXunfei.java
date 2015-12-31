@@ -66,11 +66,11 @@ public class EUExXunfei extends EUExBase {
     private void initMsg(String[] params) {
         String json = params[0];
         InitInputVO initInputVO = DataHelper.gson.fromJson(json, InitInputVO.class);
-        SpeechUtility speechUtility=SpeechUtility.createUtility(mContext.getApplicationContext(), SpeechConstant
-                .APPID +"="+
+        SpeechUtility speechUtility = SpeechUtility.createUtility(mContext.getApplicationContext(), SpeechConstant
+                .APPID + "=" +
                 initInputVO.appID);
-        InitOutputVO outputVO=new InitOutputVO();
-        outputVO.result=(speechUtility!=null);
+        InitOutputVO outputVO = new InitOutputVO();
+        outputVO.result = (speechUtility != null);
         callBackPluginJs(JsConst.CALLBACK_INIT, DataHelper.gson.toJson(outputVO));
     }
 
@@ -174,7 +174,6 @@ public class EUExXunfei extends EUExBase {
 
             }
         });
-
     }
 
     public void initRecognizer(String[] params) {
@@ -219,17 +218,17 @@ public class EUExXunfei extends EUExBase {
             @Override
             public void onResult(RecognizerResult recognizerResult, boolean isLast) {
                 RecognizeResultVO resultVO = new RecognizeResultVO();
-                JSONObject jsonObject=null;
+                JSONObject jsonObject = null;
                 try {
-                    jsonObject=new JSONObject(recognizerResult.getResultString());
-                    resultVO.text=jsonObject;
-                }catch (Exception e){
-                    if (BDebug.DEBUG){
+                    jsonObject = new JSONObject(recognizerResult.getResultString());
+                    resultVO.text = jsonObject;
+                } catch (Exception e) {
+                    if (BDebug.DEBUG) {
                         e.printStackTrace();
                     }
                 }
                 resultVO.isLast = isLast;
-                callBackPluginJs(JsConst.ON_RECOGNIZE_RESULT,DataHelper.gson.toJson(resultVO));
+                callBackPluginJs(JsConst.ON_RECOGNIZE_RESULT, DataHelper.gson.toJson(resultVO));
             }
 
             @Override
@@ -244,6 +243,38 @@ public class EUExXunfei extends EUExBase {
 
             }
         });
+        mIat.stopListening();
+        mIat.cancel();
+    }
+
+    public void stopSpeaking(String[] params) {
+        if (mTts != null) {
+            mTts.stopSpeaking();
+        }
+    }
+
+    public void pauseSpeaking(String[] params) {
+        if (mTts != null) {
+            mTts.pauseSpeaking();
+        }
+    }
+
+    public void resumeSpeaking(String[] params) {
+        if (mTts != null) {
+            mTts.resumeSpeaking();
+        }
+    }
+
+    public void stopListening(String[] params) {
+        if (mIat != null) {
+            mIat.stopListening();
+        }
+    }
+
+    public void cancelListening(String[] params) {
+        if (mIat != null) {
+            mIat.cancel();
+        }
     }
 
     private void callBackPluginJs(String methodName, String jsonData) {

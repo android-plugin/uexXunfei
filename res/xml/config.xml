@@ -29,6 +29,9 @@
             name="initSpeaker"
             type="1"/>
         <method name="startSpeaking"/>
+        <method name="stopSpeaking"/>
+        <method name="pauseSpeaking"/>
+        <method name="resumeSpeaking"/>
         <method
             name="onSpeakComplete"
             type="2"/>
@@ -46,6 +49,8 @@
             name="initRecognizer"
             type="1"/>
         <method name="startListening"/>
+        <method name="stopListening"/>
+        <method name="cancelListening"/>
         <method
             name="onRecognizeError"
             type="2"/>

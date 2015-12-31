@@ -27,5 +27,10 @@
         <method name="startSpeaking"/>
         <method name="initRecognizer"/>
         <method name="startListening"/>
+        <method name="stopSpeaking"/>
+        <method name="pauseSpeaking"/>
+        <method name="resumeSpeaking"/>
+        <method name="stopListening"/>
+        <method name="cancelListening"/>
     </plugin>
 </uexplugins>

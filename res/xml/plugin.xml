@@ -21,11 +21,17 @@
 <uexplugins>
     <plugin
         className="org.zywx.wbpalmstar.plugin.uexxunfei.EUExXunfei"
-        uexName="uexXunfei">
+        uexName="uexXunfei"
+        global="true">
         <method name="init"/>
         <method name="initSpeaker"/>
         <method name="startSpeaking"/>
         <method name="initRecognizer"/>
         <method name="startListening"/>
+        <method name="stopSpeaking"/>
+        <method name="pauseSpeaking"/>
+        <method name="resumeSpeaking"/>
+        <method name="stopListening"/>
+        <method name="cancelListening"/>
     </plugin>
 </uexplugins>

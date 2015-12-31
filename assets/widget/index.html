@@ -17,7 +17,6 @@
 
     function initSpeaker(){
         var params = {
-
         };
         var data = JSON.stringify(params);
         uexXunfei.initSpeaker(data);
@@ -29,6 +28,27 @@
         };
         var data = JSON.stringify(params);
         uexXunfei.startSpeaking(data);
+    }
+
+    function stopSpeaking(){
+        var params = {
+        };
+        var data = JSON.stringify(params);
+        uexXunfei.stopSpeaking(data);
+    }
+
+    function pauseSpeaking(){
+        var params = {
+        };
+        var data = JSON.stringify(params);
+        uexXunfei.pauseSpeaking(data);
+    }
+
+    function resumeSpeaking(){
+        var params = {
+        };
+        var data = JSON.stringify(params);
+        uexXunfei.resumeSpeaking(data);
     }
 
     function initRecognizer(){
@@ -45,6 +65,20 @@
         uexXunfei.startListening(data);
     }
 
+    function stopListening(){
+        var params = {
+        };
+        var data = JSON.stringify(params);
+        uexXunfei.stopListening(data);
+    }
+
+    function cancelListening(){
+        var params = {
+        };
+        var data = JSON.stringify(params);
+        uexXunfei.cancelListening(data);
+    }
+
 
         window.uexOnload = function(type){
             if(type == 0){
@@ -56,59 +90,61 @@
             uexXunfei.onSpeakResumed = onSpeakResumed;
             uexXunfei.cbInitRecognizer = cbInitRecognizer;
             uexXunfei.onRecognizeError = onRecognizeError;
+            uexXunfei.onRecognizeResult = onRecognizeResult;
             uexXunfei.onVolumeChanged = onVolumeChanged;
             uexXunfei.onBeginOfSpeech = onBeginOfSpeech;
             uexXunfei.onEndOfSpeech = onEndOfSpeech;
-            uexXunfei.onRecognizeResult = onRecognizeResult;
+
             }
         }
-        function cbInit(info){
-           alert('cbInit: '+info);
-       }
+    function cbInit(info){
+        alert('cbInit: '+info);
+    }
 
-       function cbInitSpeaker(info){
-           alert('cbInitSpeaker: '+info);
-       }
+    function cbInitSpeaker(info){
+        alert('cbInitSpeaker: '+info);
+    }
 
-       function onSpeakComplete(info){
-           alert('onSpeakComplete: '+info);
-       }
+    function onSpeakComplete(info){
+        alert('onSpeakComplete: '+info);
+    }
 
-       function onSpeakBegin(info){
-           alert('onSpeakBegin: '+info);
-       }
+    function onSpeakBegin(info){
+        alert('onSpeakBegin: '+info);
+    }
 
-       function onSpeakPaused(info){
-           alert('onSpeakPaused: '+info);
-       }
+    function onSpeakPaused(info){
+        alert('onSpeakPaused: '+info);
+    }
 
-       function onSpeakResumed(info){
-           alert('onSpeakResumed: '+info);
-       }
+    function onSpeakResumed(info){
+        alert('onSpeakResumed: '+info);
+    }
 
-       function cbInitRecognizer(info){
-           alert('cbInitRecognizer: '+info);
-       }
+    function cbInitRecognizer(info){
+        alert('cbInitRecognizer: '+info);
+    }
 
-       function onRecognizeError(info){
-           alert('onRecognizeError: '+info);
-       }
+    function onRecognizeError(info){
+        alert('onRecognizeError: '+info);
+    }
 
-       function onVolumeChanged(info){
-           alert('onVolumeChanged: '+info);
-       }
+    function onRecognizeResult(info){
+        alert('onRecognizeResult: '+info);
+    }
 
-       function onBeginOfSpeech(info){
-           alert('onBeginOfSpeech: '+info);
-       }
+    function onVolumeChanged(info){
+        alert('onVolumeChanged: '+info);
+    }
 
-       function onEndOfSpeech(info){
-           alert('onEndOfSpeech: '+info);
-       }
-       
-       function onRecognizeResult(info){
-           alert('onRecognizeResult: '+info);
-       }
+    function onBeginOfSpeech(info){
+        alert('onBeginOfSpeech: '+info);
+    }
+
+    function onEndOfSpeech(info){
+        alert('onEndOfSpeech: '+info);
+    }
+
 
     </script>
 </head>
@@ -117,15 +153,25 @@
 <div class="tit">uexXunfei</div>
 <div class="conbor">
     <div class="consj">
-        <input class='btn' type='button' value='init' onclick='init()'>
+            <input class='btn' type='button' value='init' onclick='init()'>
 
-        <input class='btn' type='button' value='initSpeaker' onclick='initSpeaker()'>
+            <input class='btn' type='button' value='initSpeaker' onclick='initSpeaker()'>
 
-        <input class='btn' type='button' value='startSpeaking' onclick='startSpeaking()'>
+            <input class='btn' type='button' value='startSpeaking' onclick='startSpeaking()'>
 
-        <input class='btn' type='button' value='initRecognizer' onclick='initRecognizer()'>
+            <input class='btn' type='button' value='stopSpeaking' onclick='stopSpeaking()'>
 
-        <input class='btn' type='button' value='startListening' onclick='startListening()'>
+            <input class='btn' type='button' value='pauseSpeaking' onclick='pauseSpeaking()'>
+
+            <input class='btn' type='button' value='resumeSpeaking' onclick='resumeSpeaking()'>
+
+            <input class='btn' type='button' value='initRecognizer' onclick='initRecognizer()'>
+
+            <input class='btn' type='button' value='startListening' onclick='startListening()'>
+
+            <input class='btn' type='button' value='stopListening' onclick='stopListening()'>
+
+            <input class='btn' type='button' value='cancelListening' onclick='cancelListening()'>
 
 
     </div>
