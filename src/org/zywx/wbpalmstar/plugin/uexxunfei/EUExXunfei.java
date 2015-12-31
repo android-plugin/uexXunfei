@@ -39,6 +39,8 @@ public class EUExXunfei extends EUExBase {
     private static final int MSG_INIT = 1;
     private static final int MSG_INIT_SPEAKER = 2;
 
+    private String mCallbackWinName="root";
+
     public EUExXunfei(Context context, EBrowserView eBrowserView) {
         super(context, eBrowserView);
     }
@@ -64,6 +66,7 @@ public class EUExXunfei extends EUExBase {
     }
 
     private void initMsg(String[] params) {
+        mCallbackWinName=mBrwView.getWindowName();
         String json = params[0];
         InitInputVO initInputVO = DataHelper.gson.fromJson(json, InitInputVO.class);
         SpeechUtility speechUtility = SpeechUtility.createUtility(mContext.getApplicationContext(), SpeechConstant
@@ -280,7 +283,7 @@ public class EUExXunfei extends EUExBase {
     private void callBackPluginJs(String methodName, String jsonData) {
         String js = SCRIPT_HEADER + "if(" + methodName + "){"
                 + methodName + "('" + jsonData + "');}";
-        onCallback(js);
+        evaluateScript(mCallbackWinName,0,js);
     }
 
 }

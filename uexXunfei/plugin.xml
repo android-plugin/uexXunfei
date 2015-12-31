@@ -21,7 +21,8 @@
 <uexplugins>
     <plugin
         className="org.zywx.wbpalmstar.plugin.uexxunfei.EUExXunfei"
-        uexName="uexXunfei">
+        uexName="uexXunfei"
+        global="true">
         <method name="init"/>
         <method name="initSpeaker"/>
         <method name="startSpeaking"/>
