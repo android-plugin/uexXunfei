@@ -14,8 +14,6 @@ import com.iflytek.cloud.SpeechSynthesizer;
 import com.iflytek.cloud.SpeechUtility;
 import com.iflytek.cloud.SynthesizerListener;
 
-import org.json.JSONObject;
-import org.zywx.wbpalmstar.base.BDebug;
 import org.zywx.wbpalmstar.engine.DataHelper;
 import org.zywx.wbpalmstar.engine.EBrowserView;
 import org.zywx.wbpalmstar.engine.universalex.EUExBase;
@@ -26,7 +24,6 @@ import org.zywx.wbpalmstar.plugin.uexxunfei.vo.InitRecognizerOutputVO;
 import org.zywx.wbpalmstar.plugin.uexxunfei.vo.InitSpeakerInputVO;
 import org.zywx.wbpalmstar.plugin.uexxunfei.vo.InitSpeakerOutputVO;
 import org.zywx.wbpalmstar.plugin.uexxunfei.vo.RecognizeErrorVO;
-import org.zywx.wbpalmstar.plugin.uexxunfei.vo.RecognizeResultVO;
 import org.zywx.wbpalmstar.plugin.uexxunfei.vo.StartSpeakingVO;
 
 public class EUExXunfei extends EUExBase {
@@ -201,7 +198,7 @@ public class EUExXunfei extends EUExBase {
         mIat.startListening(new RecognizerListener() {
             @Override
             public void onVolumeChanged(int i, byte[] bytes) {
-
+                System.out.println("volume:" + i);
             }
 
             @Override
@@ -220,18 +217,7 @@ public class EUExXunfei extends EUExBase {
             //isLast等于true时会话结束。
             @Override
             public void onResult(RecognizerResult recognizerResult, boolean isLast) {
-                RecognizeResultVO resultVO = new RecognizeResultVO();
-                JSONObject jsonObject = null;
-                try {
-                    jsonObject = new JSONObject(recognizerResult.getResultString());
-                    resultVO.text = jsonObject;
-                } catch (Exception e) {
-                    if (BDebug.DEBUG) {
-                        e.printStackTrace();
-                    }
-                }
-                resultVO.isLast = isLast;
-                callBackPluginJs(JsConst.ON_RECOGNIZE_RESULT, DataHelper.gson.toJson(resultVO));
+                callBackPluginJs(JsConst.ON_RECOGNIZE_RESULT, recognizerResult.getResultString());
             }
 
             @Override
@@ -246,8 +232,8 @@ public class EUExXunfei extends EUExBase {
 
             }
         });
-        mIat.stopListening();
-        mIat.cancel();
+//        mIat.stopListening();
+//        mIat.cancel();
     }
 
     public void stopSpeaking(String[] params) {
