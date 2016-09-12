@@ -1,131 +1,63 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="css/index.css">
+<!DOCTYPE html>
+<html class="um landscape min-width-240px min-width-320px min-width-480px min-width-768px min-width-1024px">
 
-    <script type="text/javascript">
-    function init(){
-        var params = {
-            appID:"577f4683"
-        };
-        var data = JSON.stringify(params);
-        var result = uexXunfei.init(data);
-        alert(result);
-    }
+    <head>
+        <title>
+        </title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="target-densitydpi=device-dpi, width=device-width, initial-scale=1, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <link rel="stylesheet" href="css/fonts/font-awesome.min.css">
+        <link rel="stylesheet" href="css/ui-box.css">
+        <link rel="stylesheet" href="css/ui-base.css">
+        <link rel="stylesheet" href="css/ui-color.css">
+        <link rel="stylesheet" href="css/appcan.icon.css">
+        <link rel="stylesheet" href="css/appcan.control.css">
+        <link rel="stylesheet" href="./css/index.css">
+        <script src="js/eruda.min.js"></script>
+        <script src="./js/index.js">
+        </script>
+    </head>
 
-    function initSpeaker(){
-        var params = {
+    <body class="" ontouchstart>
+        <div class="bc-bg" tabindex="0" data-control="PAGE" id="Page_ylUCGd">
+            <div class="uh bc-head  ubb bc-border" data-control="HEADER" id="Header_bPMcMr">
+                <div class="ub">
+                    <div class="nav-btn" id="nav-left">
+                        <div class="fa fa-1g ub-img1">
+                        </div>
+                    </div>
+                    <h1 class="ut ub-f1 ulev-3 ut-s tx-c" tabindex="0">测试系统</h1>
+                    <div class="nav-btn" id="nav-right">
+                        <div class="fa  fa-1g  ub-img1">
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        };
-        var data = JSON.stringify(params);
-        uexXunfei.initSpeaker(data);
-    }
-
-    function startSpeaking(){
-        var params = {
-            //text:"this is wuhan university of science and technology,college english test band four!"
-            text:"今天天气怎么样"
-        };
-        var data = JSON.stringify(params);
-        uexXunfei.startSpeaking(data);
-    }
-
-    function initRecognizer(){
-        var params = {
-        };
-        var data = JSON.stringify(params);
-        uexXunfei.initRecognizer(data);
-    }
-
-    function startListening(){
-        var params = {
-        };
-        var data = JSON.stringify(params);
-        uexXunfei.startListening(data);
-    }
-
-
-        window.uexOnload = function(type){
-            if(type == 0){
-                uexXunfei.onSpeakComplete = onSpeakComplete;
-                uexXunfei.onSpeakBegin = onSpeakBegin;
-                uexXunfei.onSpeakPaused = onSpeakPaused;
-                uexXunfei.onSpeakResumed = onSpeakResumed;
-                uexXunfei.onRecognizeError = onRecognizeError;
-                uexXunfei.onBeginOfSpeech = onBeginOfSpeech;
-                uexXunfei.onEndOfSpeech = onEndOfSpeech;
-                uexXunfei.onRecognizeResult = onRecognizeResult;
-            }
-        }
-        function cbInit(info){
-           alert('cbInit: '+info);
-       }
-
-       function onSpeakComplete(info){
-           alert('onSpeakComplete: '+info);
-       }
-
-       function onSpeakBegin(info){
-           alert('onSpeakBegin: '+info);
-       }
-
-       function onSpeakPaused(info){
-           alert('onSpeakPaused: '+info);
-       }
-
-       function onSpeakResumed(info){
-           alert('onSpeakResumed: '+info);
-       }
-       function onRecognizeError(info){
-           alert('onRecognizeError: '+info);
-       }
-
-       function onBeginOfSpeech(info){
-           alert('onBeginOfSpeech: '+info);
-       }
-
-       function onEndOfSpeech(info){
-           alert('onEndOfSpeech: '+info);
-           content = '';
-       }
-       var content = '';
-       function onRecognizeResult(info){
-           //alert('onRecognizeResult:'+info);
-           var data = JSON.parse(info);
-           var infoArr = data.ws;
-           var isLast = data.ls;
-           for (var i=0,len=infoArr.length; i<len; i++)
-           {
-               var text = infoArr[i].cw[0].w;
-               content += text;
-           }
-           if(isLast){
-              alert(content);
-           }
-        }
-
-    </script>
-</head>
-
-<body>
-<div class="tit">uexXunfei</div>
-<div class="conbor">
-    <div class="consj">
-        <input class='btn' type='button' value='init' onclick='init()'>
-
-        <input class='btn' type='button' value='initSpeaker' onclick='initSpeaker()'>
-
-        <input class='btn' type='button' value='startSpeaking' onclick='startSpeaking()'>
-
-        <input class='btn' type='button' value='initRecognizer' onclick='initRecognizer()'>
-
-        <input class='btn' type='button' value='startListening' onclick='startListening()'>
+            <div id="pluginList"></div>
+        </div>
+        <script src="js/appcan.js">
+        </script>
+        <script src="js/appcan.control.js">
+        </script>
+        <script type="text/javascript">
+        var plugins = [
+            "uexXunfei"
+        ];
+        var dom = $("#pluginList")
+        plugins.forEach(function(aPlugin){
+            dom.append("<div class=\"btncss\" data-control=\"BOX\"><div class=\"button ub ub-ac bc-text-head ub-pc bc-btn\" onclick='openTestCase(\"" + aPlugin + "\")'>" + aPlugin + "</div></div>")
+        });
+        </script>
 
 
-    </div>
-</div>
-</body>
+        <script src="js/appcan.scrollbox.js">
+        </script>
+        <script src="js/template.import.js">
+        </script>
+        <script src="./assets/mvvm/index.js">
+        </script>
+
+    </body>
+
 </html>

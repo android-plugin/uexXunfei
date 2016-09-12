@@ -17,6 +17,7 @@ import com.iflytek.cloud.SynthesizerListener;
 import org.zywx.wbpalmstar.engine.DataHelper;
 import org.zywx.wbpalmstar.engine.EBrowserView;
 import org.zywx.wbpalmstar.engine.universalex.EUExBase;
+import org.zywx.wbpalmstar.engine.universalex.EUExCallback;
 import org.zywx.wbpalmstar.plugin.uexxunfei.vo.InitInputVO;
 import org.zywx.wbpalmstar.plugin.uexxunfei.vo.InitOutputVO;
 import org.zywx.wbpalmstar.plugin.uexxunfei.vo.InitRecognizerInputVO;
@@ -48,18 +49,18 @@ public class EUExXunfei extends EUExBase {
     }
 
 
-    public boolean init(String[] params) {
+    public void init(String[] params) {
         if (params == null || params.length < 1) {
             errorCallback(0, 0, "error params!");
-            return false;
         }
-//        int callbackId = -1;
-//        if (params.length == 2) {
-//            try {
-//                callbackId = Integer.parseInt(params[1]);
-//            } catch (Exception e) {
-//            }
-//        }
+        //4.0回调参数返回，与ios保持一致, ios插件中不能使用init方法
+        int callbackId = -1;
+        if (params.length == 2) {
+            try {
+                callbackId = Integer.parseInt(params[1]);
+            } catch (Exception e) {
+            }
+        }
         mCallbackWinName=mBrwView.getWindowName();
         String json = params[0];
         InitInputVO initInputVO = DataHelper.gson.fromJson(json, InitInputVO.class);
@@ -68,8 +69,12 @@ public class EUExXunfei extends EUExBase {
                 initInputVO.appID);
         InitOutputVO outputVO = new InitOutputVO();
         outputVO.result = (speechUtility != null);
-        callBackPluginJs(JsConst.CALLBACK_INIT, DataHelper.gson.toJson(outputVO));
-        return outputVO.result;
+        if (callbackId != -1) {
+            callbackToJs(callbackId, false, outputVO.result? EUExCallback.F_C_SUCCESS : EUExCallback.F_C_FAILED);
+        } else {
+            callBackPluginJs(JsConst.CALLBACK_INIT, DataHelper.gson.toJson(outputVO));
+        }
+
     }
 
     private void initMsg(String[] params) {
@@ -95,7 +100,12 @@ public class EUExXunfei extends EUExBase {
     }
 
     private void initSpeakerMsg(String[] params) {
-        String json = params[0];
+        String json;
+        if(params.length == 0) {
+            json = "{}";
+        } else {
+            json = params[0];
+        }
         InitSpeakerInputVO inputVO = DataHelper.gson.fromJson(json, InitSpeakerInputVO.class);
         if (mTts == null) {
             mTts = SpeechSynthesizer.createSynthesizer(mContext.getApplicationContext(), new InitListener() {

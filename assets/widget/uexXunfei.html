@@ -1,0 +1,144 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="css/index.css">
+
+    <script type="text/javascript">
+    function init(){
+        var params = {
+            appID:"577f4683"
+        };
+        var data = JSON.stringify(params);
+        uexXunfei.init(data, function(error) {
+            if(!error) {
+                alert('success');
+            } else {
+                alert('fail');
+            }
+        });
+
+    }
+
+    function initSpeaker(){
+        var params = {
+
+        };
+        var data = JSON.stringify(params);
+        uexXunfei.initSpeaker(data);
+    }
+
+    function startSpeaking(){
+        var params = {
+            //text:"this is wuhan university of science and technology,college english test band four!"
+            text:"今天天气怎么样"
+        };
+        var data = JSON.stringify(params);
+        uexXunfei.startSpeaking(data);
+    }
+
+    function initRecognizer(){
+        var params = {
+        };
+        var data = JSON.stringify(params);
+        uexXunfei.initRecognizer(data);
+    }
+
+    function startListening(){
+    /*
+        var params = {
+        };
+        var data = JSON.stringify(params);
+        uexXunfei.startListening(data);
+        */
+        var params = {
+               };
+        var data = JSON.stringify(params);
+        uexXunfei.initRecognizer(data);
+        uexXunfei.startListening(data);
+    }
+
+
+        window.uexOnload = function(type){
+            if(type == 0){
+                uexXunfei.onSpeakComplete = onSpeakComplete;
+                uexXunfei.onSpeakBegin = onSpeakBegin;
+                uexXunfei.onSpeakPaused = onSpeakPaused;
+                uexXunfei.onSpeakResumed = onSpeakResumed;
+                uexXunfei.onRecognizeError = onRecognizeError;
+                uexXunfei.onBeginOfSpeech = onBeginOfSpeech;
+                uexXunfei.onEndOfSpeech = onEndOfSpeech;
+                uexXunfei.onRecognizeResult = onRecognizeResult;
+            }
+        }
+        function cbInit(info){
+           alert('cbInit: '+info);
+       }
+
+       function onSpeakComplete(info){
+           alert('onSpeakComplete: '+info);
+       }
+
+       function onSpeakBegin(info){
+           alert('onSpeakBegin: '+info);
+       }
+
+       function onSpeakPaused(info){
+           alert('onSpeakPaused: '+info);
+       }
+
+       function onSpeakResumed(info){
+           alert('onSpeakResumed: '+info);
+       }
+       function onRecognizeError(info){
+           alert('onRecognizeError: '+info);
+       }
+
+       function onBeginOfSpeech(info){
+           alert('onBeginOfSpeech: '+info);
+       }
+
+       function onEndOfSpeech(info){
+           alert('onEndOfSpeech: '+info);
+           content = '';
+       }
+       var content = '';
+       function onRecognizeResult(info){
+           //alert('onRecognizeResult:'+info);
+           var data = JSON.parse(info);
+           var infoArr = data.ws;
+           var isLast = data.ls;
+           for (var i=0,len=infoArr.length; i<len; i++)
+           {
+               var text = infoArr[i].cw[0].w;
+               content += text;
+           }
+           if(isLast){
+              alert(content);
+           }
+        }
+
+    </script>
+</head>
+
+<body>
+<div class="tit">uexXunfei</div>
+<div class="conbor">
+    <div class="consj">
+        <input class='btn' type='button' value='init' onclick='init()'>
+
+        <input class='btn' type='button' value='initSpeaker' onclick='initSpeaker()'>
+
+        <input class='btn' type='button' value='startSpeaking' onclick='startSpeaking()'>
+
+        <input class='btn' type='button' value='initRecognizer' onclick='initRecognizer()'>
+
+        <input class='btn' type='button' value='startListening' onclick='startListening()'>
+
+
+    </div>
+</div>
+</body>
+</html>
