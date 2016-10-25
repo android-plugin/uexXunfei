@@ -9,7 +9,7 @@
     <script type="text/javascript">
     function init(){
         var params = {
-            appID:"56710b9c"
+            appID:"577f4683"
         };
         var data = JSON.stringify(params);
         uexXunfei.init(data);
@@ -33,7 +33,10 @@
     }
 
     function initRecognizer(){
-        var params = {
+        var params ={
+            "domain": "iat",
+            "language": "en_us",
+            "accent": "mandarin"
         };
         var data = JSON.stringify(params);
         uexXunfei.initRecognizer(data);

@@ -3,6 +3,7 @@ package org.zywx.wbpalmstar.plugin.uexxunfei;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Message;
+import android.text.TextUtils;
 
 import com.iflytek.cloud.InitListener;
 import com.iflytek.cloud.RecognizerListener;
@@ -182,9 +183,21 @@ public class EUExXunfei extends EUExBase {
         if (mIat == null) {
             mIat = SpeechRecognizer.createRecognizer(mContext.getApplicationContext(), null);
         }
-        mIat.setParameter(SpeechConstant.DOMAIN, "iat");
-        mIat.setParameter(SpeechConstant.LANGUAGE, "zh_cn");
-        mIat.setParameter(SpeechConstant.ACCENT, "mandarin ");
+        String domain = "iat";
+        String language = "zh_cn";
+        String accent = "mandarin";
+        if (!TextUtils.isEmpty(inputVO.domain)) {
+            domain = inputVO.domain;
+        }
+        if (!TextUtils.isEmpty(inputVO.language)) {
+            language = inputVO.language;
+        }
+        if (!TextUtils.isEmpty(inputVO.accent)) {
+            accent = inputVO.accent;
+        }
+        mIat.setParameter(SpeechConstant.DOMAIN, domain);
+        mIat.setParameter(SpeechConstant.LANGUAGE, language);
+        mIat.setParameter(SpeechConstant.ACCENT, accent);
 
         InitRecognizerOutputVO outputVO = new InitRecognizerOutputVO();
         outputVO.result = true;
