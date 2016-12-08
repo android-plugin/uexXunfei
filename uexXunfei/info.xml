@@ -1,9 +1,7 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+﻿﻿<?xml version="1.0" encoding="utf-8"?>
 <uexplugins>
     <plugin
-        uexName="uexXunfei" version="3.0.2" build="2">
-        <info>2:修正语音识别时返回的语言类型错误问题</info>
-        <build>1:添加语音识别功能</build>
-        <build>0:科大讯飞语音插件</build>
+        uexName="uexXunfei" version="4.0.0" build="0">
+        <info>0:科大讯飞语音插件</info>
     </plugin>
 </uexplugins>
