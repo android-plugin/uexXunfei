@@ -13,4 +13,5 @@ public class JsConst {
     public static final String ON_BEGIN_OF_SPEECH = "uexXunfei.onBeginOfSpeech";
     public static final String ON_END_OF_SPEECH = "uexXunfei.onEndOfSpeech";
     public static final String ON_RECOGNIZE_RESULT = "uexXunfei.onRecognizeResult";
+    public static final String ON_READLOCALSOUCE_RESULT = "uexXunfei.onreadLocalSouceResult";
 }

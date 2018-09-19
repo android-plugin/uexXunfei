@@ -4,7 +4,9 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Message;
 import android.text.TextUtils;
+import android.util.Log;
 
+import com.iflytek.cloud.ErrorCode;
 import com.iflytek.cloud.InitListener;
 import com.iflytek.cloud.RecognizerListener;
 import com.iflytek.cloud.RecognizerResult;
@@ -15,6 +17,9 @@ import com.iflytek.cloud.SpeechSynthesizer;
 import com.iflytek.cloud.SpeechUtility;
 import com.iflytek.cloud.SynthesizerListener;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.zywx.wbpalmstar.base.BUtility;
 import org.zywx.wbpalmstar.engine.DataHelper;
 import org.zywx.wbpalmstar.engine.EBrowserView;
 import org.zywx.wbpalmstar.engine.universalex.EUExBase;
@@ -28,6 +33,14 @@ import org.zywx.wbpalmstar.plugin.uexxunfei.vo.InitSpeakerOutputVO;
 import org.zywx.wbpalmstar.plugin.uexxunfei.vo.RecognizeErrorVO;
 import org.zywx.wbpalmstar.plugin.uexxunfei.vo.StartSpeakingVO;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+
 public class EUExXunfei extends EUExBase {
 
     private static final String BUNDLE_DATA = "data";
@@ -38,10 +51,51 @@ public class EUExXunfei extends EUExBase {
     private static final int MSG_INIT = 1;
     private static final int MSG_INIT_SPEAKER = 2;
 
-    private String mCallbackWinName="root";
+    private String mCallbackWinName = "root";
+    EBrowserView eBrowserView;
+    private HashMap<String, String> mIatResults = new LinkedHashMap<String, String>();
+    private RecognizerListener mRecognizerListener = new RecognizerListener() {
+        @Override
+        public void onVolumeChanged(int i, byte[] bytes) {
+            Log.e("TAG", "==============onVolumeChanged");
+        }
+
+        @Override
+        public void onBeginOfSpeech() {
+            Log.e("TAG", "==============onBeginOfSpeech");
+
+        }
+
+        @Override
+        public void onEndOfSpeech() {
+            Log.e("TAG", "==============onEndOfSpeech");
+        }
+
+        @Override
+        public void onResult(RecognizerResult recognizerResult, boolean b) {
+            Log.e("TAG", "==============onResult" + recognizerResult.getResultString());
+            printResult(recognizerResult);
+        }
+
+        @Override
+        public void onError(SpeechError speechError) {
+            Log.e("TAG", "==============onError");
+            RecognizeErrorVO errorVO = new RecognizeErrorVO();
+            errorVO.error = speechError.getErrorDescription();
+            callBackPluginJs(JsConst.ON_RECOGNIZE_ERROR, DataHelper.gson.toJson(errorVO));
+
+        }
+
+        @Override
+        public void onEvent(int i, int i1, int i2, Bundle bundle) {
+            Log.e("TAG", "==============onEvent");
+
+        }
+    };
 
     public EUExXunfei(Context context, EBrowserView eBrowserView) {
         super(context, eBrowserView);
+        this.eBrowserView = eBrowserView;
     }
 
     @Override
@@ -62,7 +116,7 @@ public class EUExXunfei extends EUExBase {
             } catch (Exception e) {
             }
         }
-        mCallbackWinName=mBrwView.getWindowName();
+        mCallbackWinName = mBrwView.getWindowName();
         String json = params[0];
         InitInputVO initInputVO = DataHelper.gson.fromJson(json, InitInputVO.class);
         SpeechUtility speechUtility = SpeechUtility.createUtility(mContext.getApplicationContext(), SpeechConstant
@@ -71,7 +125,7 @@ public class EUExXunfei extends EUExBase {
         InitOutputVO outputVO = new InitOutputVO();
         outputVO.result = (speechUtility != null);
         if (callbackId != -1) {
-            callbackToJs(callbackId, false, outputVO.result? EUExCallback.F_C_SUCCESS : EUExCallback.F_C_FAILED);
+            callbackToJs(callbackId, false, outputVO.result ? EUExCallback.F_C_SUCCESS : EUExCallback.F_C_FAILED);
         } else {
             callBackPluginJs(JsConst.CALLBACK_INIT, DataHelper.gson.toJson(outputVO));
         }
@@ -79,7 +133,7 @@ public class EUExXunfei extends EUExBase {
     }
 
     private void initMsg(String[] params) {
-        mCallbackWinName=mBrwView.getWindowName();
+        mCallbackWinName = mBrwView.getWindowName();
         String json = params[0];
         InitInputVO initInputVO = DataHelper.gson.fromJson(json, InitInputVO.class);
         SpeechUtility speechUtility = SpeechUtility.createUtility(mContext.getApplicationContext(), SpeechConstant
@@ -102,7 +156,7 @@ public class EUExXunfei extends EUExBase {
 
     private void initSpeakerMsg(String[] params) {
         String json;
-        if(params.length == 0) {
+        if (params.length == 0) {
             json = "{}";
         } else {
             json = params[0];
@@ -224,6 +278,72 @@ public class EUExXunfei extends EUExBase {
         callBackPluginJs(JsConst.CALLBACK_INIT_RECOGNIZER, DataHelper.gson.toJson(outputVO));
     }
 
+    private InputStream ins;
+
+    /**
+     * 读取本地音频信息
+     *
+     * @param param
+     */
+    public void readLocalSouce(String[] param) {
+        if (param.length < 1 || param[0] == null || mIat == null) {
+            return;
+        }
+        String vedioPath="";
+        try {
+            JSONObject json=new JSONObject(param[0]);
+             vedioPath = json.optString("filePath");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        if(null==vedioPath||"".equals(vedioPath))
+            return;
+//        String vedioPath = param[0];
+        String realVedioPath = BUtility.makeRealPath(vedioPath, eBrowserView.getCurrentWidget().m_widgetPath, eBrowserView.getCurrentWidget().m_wgtType);
+        if (vedioPath.startsWith(BUtility.F_Widget_RES_SCHEMA)) {
+            try {
+                ins = mContext.getAssets().open(realVedioPath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }else {
+            try {
+                ins=new FileInputStream(new File(realVedioPath));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+        mIat.setParameter(SpeechConstant.AUDIO_SOURCE, "-1");
+        int ret = mIat.startListening(mRecognizerListener);
+        if (ret != ErrorCode.SUCCESS) {
+            Log.e("TAG", "识别失败,错误码：" + ret);
+        } else {
+            try {
+//                ins = mContext.getAssets().open(realVedioPath);
+                byte[] data = new byte[ins.available()];
+                ins.read(data);
+                ins.close();
+                if (null != data) {
+                    // 一次（也可以分多次）写入音频文件数据，数据格式必须是采样率为8KHz或16KHz（本地识别只支持16K采样率，云端都支持），
+                    // 位长16bit，单声道的wav或者pcm
+                    // 写入8KHz采样的音频时，必须先调用setParameter(SpeechConstant.SAMPLE_RATE, "8000")设置正确的采样率
+                    // 注：当音频过长，静音部分时长超过VAD_EOS将导致静音后面部分不能识别。
+                    // 音频切分方法：FucUtil.splitBuffer(byte[] buffer,int length,int spsize);
+                    mIat.writeAudio(data, 0, data.length);
+                    mIat.stopListening();
+                } else {
+                    mIat.cancel();
+                    Log.e("TAG", "读取音频流失败");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+
+    }
+
     public void startListening(String[] params) {
         if (mIat == null) {
             return;
@@ -299,10 +419,35 @@ public class EUExXunfei extends EUExBase {
         }
     }
 
+    private void printResult(RecognizerResult results) {
+        String text = JsonParser.parseIatResult(results.getResultString());
+
+        String sn = null;
+        // 读取json结果中的sn字段
+        try {
+            JSONObject resultJson = new JSONObject(results.getResultString());
+            sn = resultJson.optString("sn");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        mIatResults.put(sn, text);
+
+        StringBuffer resultBuffer = new StringBuffer();
+        for (String key : mIatResults.keySet()) {
+            resultBuffer.append(mIatResults.get(key));
+        }
+
+        callBackPluginJs(JsConst.ON_RECOGNIZE_RESULT, resultBuffer.toString());
+
+//        callBackPluginJs(ON_READLOCALSOUCE_RESULT, resultBuffer.toString());
+    }
+
+
     private void callBackPluginJs(String methodName, String jsonData) {
         String js = SCRIPT_HEADER + "if(" + methodName + "){"
                 + methodName + "('" + jsonData + "');}";
-        evaluateScript(mCallbackWinName,0,js);
+        evaluateScript(mCallbackWinName, 0, js);
     }
 
 }

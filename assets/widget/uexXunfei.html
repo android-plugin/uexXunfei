@@ -61,6 +61,19 @@
     }
 
 
+
+        function readLocalSouce(){
+           var params = {
+            filePath:"res://iattest.wav"
+        };
+        var data = JSON.stringify(params);
+
+        uexXunfei.readLocalSouce(data);
+        <!--uexXunfei.readLocalSouce("wgt://iattest.wav");-->
+        <!--uexXunfei.readLocalSouce("wgts://iattest.wav");-->
+        <!--uexXunfei.readLocalSouce("file:///sdcard/iattest.wav");-->
+
+        }
         window.uexOnload = function(type){
             if(type == 0){
                 uexXunfei.onSpeakComplete = onSpeakComplete;
@@ -71,8 +84,13 @@
                 uexXunfei.onBeginOfSpeech = onBeginOfSpeech;
                 uexXunfei.onEndOfSpeech = onEndOfSpeech;
                 uexXunfei.onRecognizeResult = onRecognizeResult;
+                uexXunfei.onreadLocalSouceResult = onreadLocalSouceResult;
             }
         }
+
+        <!--function onreadLocalSouceResult(info){-->
+        <!--alert(info);-->
+        <!--}-->
         function cbInit(info){
            alert('cbInit: '+info);
        }
@@ -106,7 +124,7 @@
        }
        var content = '';
        function onRecognizeResult(info){
-           //alert('onRecognizeResult:'+info);
+           alert('onRecognizeResult:'+info);
            var data = JSON.parse(info);
            var infoArr = data.ws;
            var isLast = data.ls;
@@ -136,6 +154,7 @@
         <input class='btn' type='button' value='initRecognizer' onclick='initRecognizer()'>
 
         <input class='btn' type='button' value='startListening' onclick='startListening()'>
+        <input class='btn' type='button' value='readLocalSouce' onclick='readLocalSouce()'>
 
 
     </div>

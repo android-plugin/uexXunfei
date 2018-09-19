@@ -33,5 +33,6 @@
         <method name="resumeSpeaking"/>
         <method name="stopListening"/>
         <method name="cancelListening"/>
+        <method name="readLocalSouce"/>
     </plugin>
 </uexplugins>
