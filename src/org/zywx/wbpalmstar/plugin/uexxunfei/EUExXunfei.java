@@ -1,9 +1,14 @@
 package org.zywx.wbpalmstar.plugin.uexxunfei;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.text.TextUtils;
+import android.widget.Toast;
 
 import com.iflytek.cloud.InitListener;
 import com.iflytek.cloud.RecognizerListener;
@@ -16,6 +21,7 @@ import com.iflytek.cloud.SpeechUtility;
 import com.iflytek.cloud.SynthesizerListener;
 
 import org.zywx.wbpalmstar.engine.DataHelper;
+import org.zywx.wbpalmstar.engine.EBrowserActivity;
 import org.zywx.wbpalmstar.engine.EBrowserView;
 import org.zywx.wbpalmstar.engine.universalex.EUExBase;
 import org.zywx.wbpalmstar.engine.universalex.EUExCallback;
@@ -39,6 +45,7 @@ public class EUExXunfei extends EUExBase {
     private static final int MSG_INIT_SPEAKER = 2;
 
     private String mCallbackWinName="root";
+    private String[] initSpeakerParams;
 
     public EUExXunfei(Context context, EBrowserView eBrowserView) {
         super(context, eBrowserView);
@@ -75,7 +82,6 @@ public class EUExXunfei extends EUExBase {
         } else {
             callBackPluginJs(JsConst.CALLBACK_INIT, DataHelper.gson.toJson(outputVO));
         }
-
     }
 
     private void initMsg(String[] params) {
@@ -91,13 +97,8 @@ public class EUExXunfei extends EUExBase {
     }
 
     public void initSpeaker(String[] params) {
-        Message msg = new Message();
-        msg.obj = this;
-        msg.what = MSG_INIT_SPEAKER;
-        Bundle bd = new Bundle();
-        bd.putStringArray(BUNDLE_DATA, params);
-        msg.setData(bd);
-        mHandler.sendMessage(msg);
+        initSpeakerParams = params;
+        requsetPerssions(Manifest.permission.RECORD_AUDIO, "请先申请权限" + Manifest.permission.RECORD_AUDIO, 1);
     }
 
     private void initSpeakerMsg(String[] params) {
@@ -127,7 +128,6 @@ public class EUExXunfei extends EUExBase {
         //保存在SD卡需要在AndroidManifest.xml添加写SD卡权限
         //如果不需要保存合成音频，注释该行代码
         //mTts.setParameter(SpeechConstant.TTS_AUDIO_PATH, "./sdcard/iflytek.pcm");
-
     }
 
     @Override
@@ -154,47 +154,51 @@ public class EUExXunfei extends EUExBase {
      * @param params
      */
     public void startSpeaking(String[] params) {
-        if (mTts == null) {
-            return;
+        if (mContext.checkCallingOrSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED){
+            if (mTts == null) {
+                return;
+            }
+            String json = params[0];
+            StartSpeakingVO speakingVO = DataHelper.gson.fromJson(json, StartSpeakingVO.class);
+            mTts.startSpeaking(speakingVO.text, new SynthesizerListener() {
+                @Override
+                public void onSpeakBegin() {
+                    callBackPluginJs(JsConst.ON_SPEAK_BEGIN, "");
+                }
+
+                @Override
+                public void onBufferProgress(int i, int i1, int i2, String s) {
+
+                }
+
+                @Override
+                public void onSpeakPaused() {
+                    callBackPluginJs(JsConst.ON_SPEAK_PAUSED, "");
+                }
+
+                @Override
+                public void onSpeakResumed() {
+                    callBackPluginJs(JsConst.ON_SPEAK_RESUMED, "");
+                }
+
+                @Override
+                public void onSpeakProgress(int i, int i1, int i2) {
+
+                }
+
+                @Override
+                public void onCompleted(SpeechError speechError) {
+                    callBackPluginJs(JsConst.ON_SPEAK_COMPLETE, "");
+                }
+
+                @Override
+                public void onEvent(int i, int i1, int i2, Bundle bundle) {
+
+                }
+            });
+        } else {
+            Toast.makeText(mContext, "请先申请权限" + Manifest.permission.RECORD_AUDIO, Toast.LENGTH_LONG).show();
         }
-        String json = params[0];
-        StartSpeakingVO speakingVO = DataHelper.gson.fromJson(json, StartSpeakingVO.class);
-        mTts.startSpeaking(speakingVO.text, new SynthesizerListener() {
-            @Override
-            public void onSpeakBegin() {
-                callBackPluginJs(JsConst.ON_SPEAK_BEGIN, "");
-            }
-
-            @Override
-            public void onBufferProgress(int i, int i1, int i2, String s) {
-
-            }
-
-            @Override
-            public void onSpeakPaused() {
-                callBackPluginJs(JsConst.ON_SPEAK_PAUSED, "");
-            }
-
-            @Override
-            public void onSpeakResumed() {
-                callBackPluginJs(JsConst.ON_SPEAK_RESUMED, "");
-            }
-
-            @Override
-            public void onSpeakProgress(int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onCompleted(SpeechError speechError) {
-                callBackPluginJs(JsConst.ON_SPEAK_COMPLETE, "");
-            }
-
-            @Override
-            public void onEvent(int i, int i1, int i2, Bundle bundle) {
-
-            }
-        });
     }
 
     public void initRecognizer(String[] params) {
@@ -303,6 +307,36 @@ public class EUExXunfei extends EUExBase {
         String js = SCRIPT_HEADER + "if(" + methodName + "){"
                 + methodName + "('" + jsonData + "');}";
         evaluateScript(mCallbackWinName,0,js);
+    }
+
+    @Override
+    public void onRequestPermissionResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionResult(requestCode, permissions, grantResults);
+//        Log.i("--grantResults.length-","grantResults----" + grantResults.length);
+        if (requestCode == 1){
+            if (grantResults[0] != PackageManager.PERMISSION_DENIED){
+                Message msg = new Message();
+                msg.obj = this;
+                msg.what = MSG_INIT_SPEAKER;
+                Bundle bd = new Bundle();
+                bd.putStringArray(BUNDLE_DATA, initSpeakerParams);
+                msg.setData(bd);
+                mHandler.sendMessage(msg);
+//                Toast.makeText(mContext, "--权限通过--", Toast.LENGTH_LONG).show();
+//                Log.i("----走了2----", "----走了2----");
+            } else {
+                // 对于 ActivityCompat.shouldShowRequestPermissionRationale
+                // 1：用户拒绝了该权限，没有勾选"不再提醒"，此方法将返回true。
+                // 2：用户拒绝了该权限，有勾选"不再提醒"，此方法将返回 false。
+                // 3：如果用户同意了权限，此方法返回false
+                // 拒绝了权限且勾选了"不再提醒"
+                if (!ActivityCompat.shouldShowRequestPermissionRationale((EBrowserActivity)mContext, permissions[0])) {
+                    Toast.makeText(mContext, "请先设置权限" + permissions[0], Toast.LENGTH_LONG).show();
+                } else {
+                    requsetPerssions(Manifest.permission.RECORD_AUDIO, "请先申请权限" + permissions[0], 1);
+                }
+            }
+        }
     }
 
 }
