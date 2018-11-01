@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <uexplugins>
     <plugin
-        uexName="uexXunfei" version="4.0.0" build="0">
-        <info>0:科大讯飞语音插件</info>
+        uexName="uexXunfei" version="4.0.1" build="0">
+        <info>0:科大讯飞语音插件,增加识别语音包</info>
+        <build>0:科大讯飞语音插件</build>
     </plugin>
 </uexplugins>
