@@ -98,7 +98,20 @@ public class EUExXunfei extends EUExBase {
 
     public void initSpeaker(String[] params) {
         initSpeakerParams = params;
-        requsetPerssions(Manifest.permission.RECORD_AUDIO, "请先申请权限" + Manifest.permission.RECORD_AUDIO, 1);
+        // android6.0以上动态权限申请
+        if (mContext.checkCallingOrSelfPermission(Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED){
+            requsetPerssions(Manifest.permission.RECORD_AUDIO, "请先申请权限"
+                    + Manifest.permission.RECORD_AUDIO, 1);
+        } else {
+            Message msg = new Message();
+            msg.obj = this;
+            msg.what = MSG_INIT_SPEAKER;
+            Bundle bd = new Bundle();
+            bd.putStringArray(BUNDLE_DATA, initSpeakerParams);
+            msg.setData(bd);
+            mHandler.sendMessage(msg);
+        }
     }
 
     private void initSpeakerMsg(String[] params) {
@@ -154,7 +167,8 @@ public class EUExXunfei extends EUExBase {
      * @param params
      */
     public void startSpeaking(String[] params) {
-        if (mContext.checkCallingOrSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED){
+        if (mContext.checkCallingOrSelfPermission(Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED){
             if (mTts == null) {
                 return;
             }
@@ -312,7 +326,6 @@ public class EUExXunfei extends EUExBase {
     @Override
     public void onRequestPermissionResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionResult(requestCode, permissions, grantResults);
-//        Log.i("--grantResults.length-","grantResults----" + grantResults.length);
         if (requestCode == 1){
             if (grantResults[0] != PackageManager.PERMISSION_DENIED){
                 Message msg = new Message();
@@ -322,8 +335,6 @@ public class EUExXunfei extends EUExBase {
                 bd.putStringArray(BUNDLE_DATA, initSpeakerParams);
                 msg.setData(bd);
                 mHandler.sendMessage(msg);
-//                Toast.makeText(mContext, "--权限通过--", Toast.LENGTH_LONG).show();
-//                Log.i("----走了2----", "----走了2----");
             } else {
                 // 对于 ActivityCompat.shouldShowRequestPermissionRationale
                 // 1：用户拒绝了该权限，没有勾选"不再提醒"，此方法将返回true。
