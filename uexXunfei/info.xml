@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <uexplugins>
     <plugin
-        uexName="uexXunfei" version="4.0.0" build="0">
-        <info>0:科大讯飞语音插件</info>
+        uexName="uexXunfei" version="4.3.0" build="1">
+        <info>1:添加动态权限申请</info>
+        <bulid>0:科大讯飞语音插件</bulid>
     </plugin>
 </uexplugins>
