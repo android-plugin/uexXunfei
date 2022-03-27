@@ -9,14 +9,14 @@
     <script type="text/javascript">
     function init(){
         var params = {
-            appID:"577f4683"
+            appID:"4a95d0b3"
         };
         var data = JSON.stringify(params);
         uexXunfei.init(data, function(error) {
             if(!error) {
-                alert('success');
+                alert('uexXunfei.init success');
             } else {
-                alert('fail');
+                alert('uexXunfei.init fail');
             }
         });
 
@@ -38,6 +38,50 @@
         var data = JSON.stringify(params);
         uexXunfei.startSpeaking(data);
     }
+        
+        function initWakeuper(){
+            var params = {
+                wakupEnginPath:"res://xunfei/ivw/4a95d0b3.jet"
+            };
+            var data = JSON.stringify(params);
+            uexXunfei.initWakeuper(data);
+        }
+
+        function startWakeuper(){
+            var params = {
+                //text:"this is wuhan university of science and technology,college english test band four!"
+                text:""
+            };
+            var data = JSON.stringify(params);
+            uexXunfei.startWakeuper(data);
+        }
+        function stopWakeuper(){
+            var params = {
+                //text:"this is wuhan university of science and technology,college english test band four!"
+                text:""
+            };
+            var data = JSON.stringify(params);
+            uexXunfei.stopWakeuper(data);
+        }
+        
+        function startWakeuperOneshot(){
+            var params = {
+                //text:"this is wuhan university of science and technology,college english test band four!"
+                text:""
+            };
+            var data = JSON.stringify(params);
+            uexXunfei.startWakeuperOneshot(data);
+        }
+        function setWakeUpBuildGrammar(){
+            var params = {
+                //text:"this is wuhan university of science and technology,college english test band four!"
+                text:"",
+                filePath:"wgt://oneshot_cloud.abnf"
+            };
+            var data = JSON.stringify(params);
+            uexXunfei.setWakeUpBuildGrammar(data);
+        }
+        
 
     function initRecognizer(){
         var params = {
@@ -84,7 +128,11 @@
                 uexXunfei.onBeginOfSpeech = onBeginOfSpeech;
                 uexXunfei.onEndOfSpeech = onEndOfSpeech;
                 uexXunfei.onRecognizeResult = onRecognizeResult;
-                uexXunfei.onreadLocalSouceResult = onreadLocalSouceResult;
+                //uexXunfei.onreadLocalSouceResult = onreadLocalSouceResult;
+                uexXunfei.onWakeupOneshotResult = onWakeupOneshotResult;
+                uexXunfei.onWakeupResult = onWakeupResult;
+                uexXunfei.onWakeupError = onWakeupError;
+                uexXunfei.onSetWakeUpBuildGrammar = onSetWakeUpBuildGrammar;
             }
         }
 
@@ -94,7 +142,18 @@
         function cbInit(info){
            alert('cbInit: '+info);
        }
-
+        function onSetWakeUpBuildGrammar(info){
+            alert('onSetWakeUpBuildGrammar: '+info);
+        }
+        function onWakeupOneshotResult(info){
+            alert('onWakeupOneshotResult: '+info);
+        }
+        function onWakeupResult(info){
+            alert('onWakeupResult: '+info);
+        }
+        function onWakeupError(info){
+            alert('onWakeupError: '+info);
+        }
        function onSpeakComplete(info){
            alert('onSpeakComplete: '+info);
        }
@@ -155,6 +214,13 @@
 
         <input class='btn' type='button' value='startListening' onclick='startListening()'>
         <input class='btn' type='button' value='readLocalSouce' onclick='readLocalSouce()'>
+        <input class='btn' type='button' value='initWakeuper' onclick='initWakeuper()'>
+        <input class='btn' type='button' value='startWakeuper' onclick='startWakeuper()'>
+        <input class='btn' type='button' value='stopWakeuper' onclick='stopWakeuper()'>
+        <input class='btn' type='button' value='startWakeuperOneshot' onclick='startWakeuperOneshot()'>
+        <input class='btn' type='button' value='setWakeUpBuildGrammar' onclick='setWakeUpBuildGrammar()'>
+            
+            
 
 
     </div>

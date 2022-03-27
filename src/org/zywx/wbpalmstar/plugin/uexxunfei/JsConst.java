@@ -14,4 +14,8 @@ public class JsConst {
     public static final String ON_END_OF_SPEECH = "uexXunfei.onEndOfSpeech";
     public static final String ON_RECOGNIZE_RESULT = "uexXunfei.onRecognizeResult";
     public static final String ON_READLOCALSOUCE_RESULT = "uexXunfei.onreadLocalSouceResult";
+    public static final String ON_WAKEUP_RESULT = "uexXunfei.onWakeupResult";
+    public static final String ON_WAKEUP_ERROR = "uexXunfei.onWakeupError";
+    public static final String ON_WAKEUP_ONESHOT_RESULT = "uexXunfei.onWakeupOneshotResult";
+    public static final String ON_SET_WAKEUP_BUILD_GRAMMAR = "uexXunfei.onSetWakeUpBuildGrammar";
 }

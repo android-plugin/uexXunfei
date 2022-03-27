@@ -27,5 +27,7 @@ import java.io.Serializable;
 public class InitOutputVO implements Serializable {
 
     public boolean result;
+    public int errorCode;
+    public String errorDetail;
 
 }

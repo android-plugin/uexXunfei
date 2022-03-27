@@ -1,8 +1,13 @@
 package org.zywx.wbpalmstar.plugin.uexxunfei;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -16,11 +21,17 @@ import com.iflytek.cloud.SpeechRecognizer;
 import com.iflytek.cloud.SpeechSynthesizer;
 import com.iflytek.cloud.SpeechUtility;
 import com.iflytek.cloud.SynthesizerListener;
+import com.iflytek.cloud.VoiceWakeuper;
+import com.iflytek.cloud.WakeuperListener;
+import com.iflytek.cloud.WakeuperResult;
+import com.iflytek.cloud.util.ResourceUtil;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.zywx.wbpalmstar.base.BDebug;
 import org.zywx.wbpalmstar.base.BUtility;
 import org.zywx.wbpalmstar.engine.DataHelper;
+import org.zywx.wbpalmstar.engine.EBrowserActivity;
 import org.zywx.wbpalmstar.engine.EBrowserView;
 import org.zywx.wbpalmstar.engine.universalex.EUExBase;
 import org.zywx.wbpalmstar.engine.universalex.EUExCallback;
@@ -42,8 +53,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 public class EUExXunfei extends EUExBase {
+    private static final String TAG = "EUExXunfei";
 
     private static final String BUNDLE_DATA = "data";
+    private static final int REQUEST_CODE_RECORD_AUDIO_PERMISSION = 2000;
 
     private SpeechSynthesizer mTts = null;
     private SpeechRecognizer mIat = null;
@@ -52,6 +65,8 @@ public class EUExXunfei extends EUExBase {
     private static final int MSG_INIT_SPEAKER = 2;
 
     private String mCallbackWinName = "root";
+    private String[] mInitParams;
+    private int mInitCallbackId = -1;
     EBrowserView eBrowserView;
     private HashMap<String, String> mIatResults = new LinkedHashMap<String, String>();
     private RecognizerListener mRecognizerListener = new RecognizerListener() {
@@ -109,31 +124,24 @@ public class EUExXunfei extends EUExBase {
             errorCallback(0, 0, "error params!");
         }
         //4.0回调参数返回，与ios保持一致, ios插件中不能使用init方法
-        int callbackId = -1;
+        mInitCallbackId = -1;
+        mInitParams = params;
         if (params.length == 2) {
             try {
-                callbackId = Integer.parseInt(params[1]);
+                mInitCallbackId = Integer.parseInt(params[1]);
             } catch (Exception e) {
             }
         }
         mCallbackWinName = mBrwView.getWindowName();
-        String json = params[0];
-        InitInputVO initInputVO = DataHelper.gson.fromJson(json, InitInputVO.class);
-        SpeechUtility speechUtility = SpeechUtility.createUtility(mContext.getApplicationContext(), SpeechConstant
-                .APPID + "=" +
-                initInputVO.appID);
-        InitOutputVO outputVO = new InitOutputVO();
-        outputVO.result = (speechUtility != null);
-        if (callbackId != -1) {
-            callbackToJs(callbackId, false, outputVO.result ? EUExCallback.F_C_SUCCESS : EUExCallback.F_C_FAILED);
+        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(Manifest.permission.RECORD_AUDIO, "请先申请权限"
+                    + Manifest.permission.RECORD_AUDIO, REQUEST_CODE_RECORD_AUDIO_PERMISSION);
         } else {
-            callBackPluginJs(JsConst.CALLBACK_INIT, DataHelper.gson.toJson(outputVO));
+            initMsg(params);
         }
-
     }
 
     private void initMsg(String[] params) {
-        mCallbackWinName = mBrwView.getWindowName();
         String json = params[0];
         InitInputVO initInputVO = DataHelper.gson.fromJson(json, InitInputVO.class);
         SpeechUtility speechUtility = SpeechUtility.createUtility(mContext.getApplicationContext(), SpeechConstant
@@ -141,7 +149,53 @@ public class EUExXunfei extends EUExBase {
                 initInputVO.appID);
         InitOutputVO outputVO = new InitOutputVO();
         outputVO.result = (speechUtility != null);
-        callBackPluginJs(JsConst.CALLBACK_INIT, DataHelper.gson.toJson(outputVO));
+        if (mInitCallbackId != -1) {
+            callbackToJs(mInitCallbackId, false, outputVO.result ? EUExCallback.F_C_SUCCESS : EUExCallback.F_C_FAILED);
+        } else {
+            callBackPluginJs(JsConst.CALLBACK_INIT, DataHelper.gson.toJson(outputVO));
+        }
+    }
+
+    private void callbackPermissionDenied(String[] permissions) {
+        // 定位权限请求失败，需要给前端回调这种情况
+        JSONObject resultJson = null;
+        int errorCode = 2;
+        try {
+            resultJson = new JSONObject();
+            if (permissions == null || permissions.length == 0) {
+                resultJson.put("errCode", errorCode);
+                resultJson.put("errMsg", "未授权录音权限，录音功能将无法使用");
+            } else {
+                BDebug.i(TAG, "onRequestPermissionResult: request denied: ", permissions[0]);
+                // 对于 ActivityCompat.shouldShowRequestPermissionRationale
+                // 1：用户拒绝了该权限，没有勾选"不再提醒"，此方法将返回true。
+                // 2：用户拒绝了该权限，有勾选"不再提醒"，此方法将返回 false。
+                // 3：如果用户同意了权限，此方法返回false
+                // 拒绝了权限且勾选了"不再提醒"
+                // 总之：此方法返回false的时候，代表用户再也不想要这个权限了，也没法申请了。只能再次弹提示说明丢失权限的后果，功能无法使用。
+                if (ActivityCompat.shouldShowRequestPermissionRationale((EBrowserActivity)mContext, permissions[0])) {
+                    errorCode = 201;
+                    resultJson.put("errCode", errorCode);
+                    resultJson.put("errMsg", "本次录音权限请求失败，无法使用语音识别等功能：" + permissions[0]);
+                } else {
+                    errorCode = 202;
+                    resultJson.put("errCode", errorCode);
+                    resultJson.put("errMsg", "录音权限无法获取，语音识别等功能将无法使用：" + permissions[0]);
+                }
+            }
+        } catch (Exception e) {
+            if (BDebug.isDebugMode()){
+                e.printStackTrace();
+            }
+        }
+        InitOutputVO outputVO = new InitOutputVO();
+        outputVO.result = false;
+        if (mInitCallbackId != -1) {
+            callbackToJs(mInitCallbackId, false, errorCode, resultJson);
+        } else {
+            callBackPluginJs(JsConst.CALLBACK_INIT, DataHelper.gson.toJson(outputVO));
+        }
+        BDebug.i(TAG, "onRequestPermissionResult callback: ", resultJson);
     }
 
     public void initSpeaker(String[] params) {
@@ -419,6 +473,128 @@ public class EUExXunfei extends EUExBase {
         }
     }
 
+    public void initWakeuper(String[] params) {
+        String jetPath = null;
+        if (params.length < 1) {
+            BDebug.w(TAG, "initWakeuper failed: params.length < 1");
+            return;
+        }
+        // 初始化唤醒对象
+        VoiceWakeuper voiceWakeuper = VoiceWakeuper.createWakeuper(mContext, new InitListener() {
+            @Override
+            public void onInit(int i) {
+                BDebug.i(TAG, "onInit:" + i);
+            }
+        });
+        try {
+            // 清空参数
+//            voiceWakeuper.setParameter(SpeechConstant.PARAMS, null);
+            // 开始设置参数
+            JSONObject json = new JSONObject(params[0]);
+            jetPath = json.getString("wakupEnginPath");
+            String jetNativePath = BUtility.makeRealPath(jetPath, mBrwView);
+            if (!TextUtils.isEmpty(jetNativePath) && jetNativePath.startsWith("widget/")) {
+                jetNativePath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.assets, jetNativePath);
+            }
+            BDebug.i(TAG, "initWakeuper jetNativePath: " + jetNativePath);
+            // 设置唤醒资源路径
+            voiceWakeuper.setParameter(SpeechConstant.IVW_RES_PATH, jetNativePath);
+
+            final int curThresh = 1450;
+            // 唤醒门限值，根据资源携带的唤醒词个数按照“id:门限;id:门限”的格式传入
+            voiceWakeuper.setParameter(SpeechConstant.IVW_THRESHOLD, "0:" + curThresh);
+            // 设置唤醒模式
+            voiceWakeuper.setParameter(SpeechConstant.IVW_SST, "wakeup");
+            // 设置持续进行唤醒
+            voiceWakeuper.setParameter(SpeechConstant.KEEP_ALIVE, "0");
+            // 设置闭环优化网络模式
+            voiceWakeuper.setParameter(SpeechConstant.IVW_NET_MODE, "0");
+            // 设置唤醒录音保存路径，保存最近一分钟的音频
+//            voiceWakeuper.setParameter(SpeechConstant.IVW_AUDIO_PATH,
+//                    getExternalFilesDir("msc").getAbsolutePath() + "/ivw.wav");
+//            voiceWakeuper.setParameter(SpeechConstant.AUDIO_FORMAT, "wav");
+            // 如有需要，设置 NOTIFY_RECORD_DATA 以实时通过 onEvent 返回录音音频流字节
+            //voiceWakeuper.setParameter( SpeechConstant.NOTIFY_RECORD_DATA, "1" );
+            // 启动唤醒
+            /*	voiceWakeuper.setParameter(SpeechConstant.AUDIO_SOURCE, "-1");*/
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void startWakeuper(String[] params) {
+        VoiceWakeuper voiceWakeuper = VoiceWakeuper.getWakeuper();
+        if (voiceWakeuper != null) {
+
+            voiceWakeuper.startListening(new WakeuperListener() {
+                @Override
+                public void onBeginOfSpeech() {
+                    BDebug.i(TAG, "WakeuperListener", "onBeginOfSpeech");
+                }
+
+                @Override
+                public void onResult(WakeuperResult wakeuperResult) {
+                    BDebug.i(TAG, "WakeuperListener", "onResult");
+                    callbackWakeupResult(wakeuperResult);
+                }
+
+                @Override
+                public void onError(SpeechError speechError) {
+                    BDebug.i(TAG, "WakeuperListener", "onError", speechError.getErrorCode(), speechError.getErrorDescription());
+                    RecognizeErrorVO errorVO = new RecognizeErrorVO();
+                    errorVO.error = speechError.getErrorDescription();
+                    callBackPluginJs(JsConst.ON_WAKEUP_ERROR, DataHelper.gson.toJson(errorVO));
+                }
+
+                @Override
+                public void onEvent(int i, int i1, int i2, Bundle bundle) {
+                    BDebug.i(TAG, "WakeuperListener", "onEvent");
+                }
+
+                @Override
+                public void onVolumeChanged(int i) {
+//                    BDebug.i(TAG, "WakeuperListener", "onVolumeChanged");
+                }
+            });
+        } else {
+            BDebug.w(TAG, "startWakeuper error: 唤醒未初始化");
+        }
+    }
+
+    private void callbackWakeupResult(WakeuperResult results) {
+//        String text = JsonParser.parseIatResult(results.getResultString());
+        String resultString = results.getResultString();
+        String sn = null;
+        // 读取json结果中的sn字段
+        try {
+            JSONObject resultJson = new JSONObject(results.getResultString());
+            sn = resultJson.optString("sn");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        callBackPluginJs(JsConst.ON_WAKEUP_RESULT, resultString);
+
+//        callBackPluginJs(ON_READLOCALSOUCE_RESULT, resultBuffer.toString());
+    }
+
+    public void stopWakeuper(String[] params) {
+
+        VoiceWakeuper voiceWakeuper = VoiceWakeuper.getWakeuper();
+        if (voiceWakeuper != null) {
+            voiceWakeuper.destroy();
+        }
+    }
+
+    public void startWakeuperOneshot(String[] params) {
+
+    }
+
+    public void setWakeUpBuildGrammar(String[] params) {
+
+    }
+
     private void printResult(RecognizerResult results) {
         String text = JsonParser.parseIatResult(results.getResultString());
 
@@ -448,6 +624,18 @@ public class EUExXunfei extends EUExBase {
         String js = SCRIPT_HEADER + "if(" + methodName + "){"
                 + methodName + "('" + jsonData + "');}";
         evaluateScript(mCallbackWinName, 0, js);
+    }
+
+    @Override
+    public void onRequestPermissionResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_CODE_RECORD_AUDIO_PERMISSION){
+            if (grantResults[0] != PackageManager.PERMISSION_DENIED){
+                initMsg(mInitParams);
+            } else {
+                callbackPermissionDenied(permissions);
+            }
+        }
     }
 
 }
