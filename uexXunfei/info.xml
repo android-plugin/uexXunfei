@@ -1,8 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <uexplugins>
     <plugin
-        uexName="uexXunfei" version="4.4.2" build="2021122001">
-        <info>2:升级SDK（2021-12-20下载最新版）</info>
+        uexName="uexXunfei" version="4.4.3" build="2022032801">
+        <info>3:增加了语音唤醒相关功能API</info>
+        <build>2:升级SDK（2022-03-27下载最新版）</build>
         <build>0:科大讯飞语音插件,增加识别语音包</build>
         <build>0:科大讯飞语音插件</build>
     </plugin>
