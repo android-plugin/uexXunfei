@@ -473,6 +473,37 @@ public class EUExXunfei extends EUExBase {
         }
     }
 
+    private WakeuperListener mWakeuperListner = new WakeuperListener() {
+        @Override
+        public void onBeginOfSpeech() {
+            BDebug.i(TAG, "WakeuperListener", "onBeginOfSpeech");
+        }
+
+        @Override
+        public void onResult(WakeuperResult wakeuperResult) {
+            BDebug.i(TAG, "WakeuperListener", "onResult");
+            callbackWakeupResult(wakeuperResult);
+        }
+
+        @Override
+        public void onError(SpeechError speechError) {
+            BDebug.i(TAG, "WakeuperListener", "onError", speechError.getErrorCode(), speechError.getErrorDescription());
+            RecognizeErrorVO errorVO = new RecognizeErrorVO();
+            errorVO.error = speechError.getErrorDescription();
+            callBackPluginJs(JsConst.ON_WAKEUP_ERROR, DataHelper.gson.toJson(errorVO));
+        }
+
+        @Override
+        public void onEvent(int i, int i1, int i2, Bundle bundle) {
+            BDebug.i(TAG, "WakeuperListener", "onEvent");
+        }
+
+        @Override
+        public void onVolumeChanged(int i) {
+//                    BDebug.i(TAG, "WakeuperListener", "onVolumeChanged");
+        }
+    };
+
     public void initWakeuper(String[] params) {
         String jetPath = null;
         if (params.length < 1) {
@@ -495,6 +526,8 @@ public class EUExXunfei extends EUExBase {
             String jetNativePath = BUtility.makeRealPath(jetPath, mBrwView);
             if (!TextUtils.isEmpty(jetNativePath) && jetNativePath.startsWith("widget/")) {
                 jetNativePath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.assets, jetNativePath);
+            } else {
+                jetNativePath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.path, jetNativePath);
             }
             BDebug.i(TAG, "initWakeuper jetNativePath: " + jetNativePath);
             // 设置唤醒资源路径
@@ -503,10 +536,8 @@ public class EUExXunfei extends EUExBase {
             final int curThresh = 1450;
             // 唤醒门限值，根据资源携带的唤醒词个数按照“id:门限;id:门限”的格式传入
             voiceWakeuper.setParameter(SpeechConstant.IVW_THRESHOLD, "0:" + curThresh);
-            // 设置唤醒模式
-            voiceWakeuper.setParameter(SpeechConstant.IVW_SST, "wakeup");
             // 设置持续进行唤醒
-            voiceWakeuper.setParameter(SpeechConstant.KEEP_ALIVE, "0");
+            voiceWakeuper.setParameter(SpeechConstant.KEEP_ALIVE, "1");
             // 设置闭环优化网络模式
             voiceWakeuper.setParameter(SpeechConstant.IVW_NET_MODE, "0");
             // 设置唤醒录音保存路径，保存最近一分钟的音频
@@ -527,72 +558,84 @@ public class EUExXunfei extends EUExBase {
         VoiceWakeuper voiceWakeuper = VoiceWakeuper.getWakeuper();
         if (voiceWakeuper != null) {
 
-            voiceWakeuper.startListening(new WakeuperListener() {
-                @Override
-                public void onBeginOfSpeech() {
-                    BDebug.i(TAG, "WakeuperListener", "onBeginOfSpeech");
-                }
+            // 设置唤醒模式
+            voiceWakeuper.setParameter(SpeechConstant.IVW_SST, "wakeup");
 
-                @Override
-                public void onResult(WakeuperResult wakeuperResult) {
-                    BDebug.i(TAG, "WakeuperListener", "onResult");
-                    callbackWakeupResult(wakeuperResult);
-                }
-
-                @Override
-                public void onError(SpeechError speechError) {
-                    BDebug.i(TAG, "WakeuperListener", "onError", speechError.getErrorCode(), speechError.getErrorDescription());
-                    RecognizeErrorVO errorVO = new RecognizeErrorVO();
-                    errorVO.error = speechError.getErrorDescription();
-                    callBackPluginJs(JsConst.ON_WAKEUP_ERROR, DataHelper.gson.toJson(errorVO));
-                }
-
-                @Override
-                public void onEvent(int i, int i1, int i2, Bundle bundle) {
-                    BDebug.i(TAG, "WakeuperListener", "onEvent");
-                }
-
-                @Override
-                public void onVolumeChanged(int i) {
-//                    BDebug.i(TAG, "WakeuperListener", "onVolumeChanged");
-                }
-            });
+            voiceWakeuper.startListening(mWakeuperListner);
         } else {
             BDebug.w(TAG, "startWakeuper error: 唤醒未初始化");
         }
     }
 
     private void callbackWakeupResult(WakeuperResult results) {
-//        String text = JsonParser.parseIatResult(results.getResultString());
         String resultString = results.getResultString();
-        String sn = null;
-        // 读取json结果中的sn字段
-        try {
-            JSONObject resultJson = new JSONObject(results.getResultString());
-            sn = resultJson.optString("sn");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
         callBackPluginJs(JsConst.ON_WAKEUP_RESULT, resultString);
-
-//        callBackPluginJs(ON_READLOCALSOUCE_RESULT, resultBuffer.toString());
     }
 
     public void stopWakeuper(String[] params) {
-
         VoiceWakeuper voiceWakeuper = VoiceWakeuper.getWakeuper();
         if (voiceWakeuper != null) {
+            voiceWakeuper.stopListening();
             voiceWakeuper.destroy();
         }
     }
 
     public void startWakeuperOneshot(String[] params) {
-
+        VoiceWakeuper voiceWakeuper = VoiceWakeuper.getWakeuper();
+        if (voiceWakeuper != null) {
+            // 设置唤醒模式
+            voiceWakeuper.setParameter(SpeechConstant.IVW_SST, "oneshot");
+            voiceWakeuper.startListening(mWakeuperListner);
+        } else {
+            BDebug.w(TAG, "startWakeuper error: 唤醒未初始化");
+        }
     }
 
     public void setWakeUpBuildGrammar(String[] params) {
+        String anbfPath = null;
+        String jetPath = null;
+        if (params.length < 1) {
+            BDebug.w(TAG, "setWakeUpBuildGrammar failed: params.length < 1");
+            return;
+        }
+        // 初始化唤醒对象
+        VoiceWakeuper voiceWakeuper = VoiceWakeuper.getWakeuper();
+        try {
+            // 开始设置参数
+            JSONObject json = new JSONObject(params[0]);
+            anbfPath = json.getString("filePath");
+            String jetAnbfPath = BUtility.makeRealPath(anbfPath, mBrwView);
+            if (!TextUtils.isEmpty(jetAnbfPath) && jetAnbfPath.startsWith("widget/")) {
+                jetAnbfPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.assets, jetAnbfPath);
+            } else {
+                jetAnbfPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.path, jetAnbfPath);
+            }
+            BDebug.i(TAG, "setWakeUpBuildGrammar jetAnbfPath: " + jetAnbfPath);
 
+            jetPath = json.getString("asrJetPath");
+            String asrResPath = BUtility.makeRealPath(jetPath, mBrwView);
+            if (!TextUtils.isEmpty(asrResPath) && asrResPath.startsWith("widget/")) {
+                asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.assets, asrResPath);
+            } else {
+                asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.path, asrResPath);
+            }
+            BDebug.i(TAG, "setWakeUpBuildGrammar asrResPath: " + asrResPath);
+
+            String asrEngineType = SpeechConstant.TYPE_LOCAL;
+            //设置识别引擎，只影响唤醒后的识别（唤醒本身只有离线类型）
+            voiceWakeuper.setParameter( SpeechConstant.ENGINE_TYPE, asrEngineType );
+//            if( SpeechConstant.TYPE_CLOUD.equals(asrEngineType) ){
+//                //设置在线识别的语法ID
+//                voiceWakeuper.setParameter( SpeechConstant.CLOUD_GRAMMAR, grammarID );
+//            }else{
+            // 设置本地识别资源
+            voiceWakeuper.setParameter( ResourceUtil.ASR_RES_PATH, asrResPath );
+            // 设置语法构建路径
+            voiceWakeuper.setParameter( ResourceUtil.GRM_BUILD_PATH, jetAnbfPath );
+//            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     private void printResult(RecognizerResult results) {
