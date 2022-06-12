@@ -12,6 +12,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.iflytek.cloud.ErrorCode;
+import com.iflytek.cloud.GrammarListener;
 import com.iflytek.cloud.InitListener;
 import com.iflytek.cloud.RecognizerListener;
 import com.iflytek.cloud.RecognizerResult;
@@ -473,6 +474,34 @@ public class EUExXunfei extends EUExBase {
         }
     }
 
+    private String mEngineType;
+    private String mCloudGrammarID;
+    private String mLocalGrammarID;
+    private String mWakeupMode;
+
+    /**
+     * 构建语法回调监听
+     */
+    GrammarListener grammarListener = new GrammarListener() {
+        @Override
+        public void onBuildFinish(String grammarId, SpeechError error) {
+            if (error == null) {
+                if (SpeechConstant.TYPE_CLOUD.equals(mEngineType)) {
+                    mCloudGrammarID = grammarId;
+                } else {
+                    mLocalGrammarID = grammarId;
+                }
+                BDebug.i(TAG, "语法构建成功：" + grammarId);
+                callBackPluginJs(JsConst.ON_SET_WAKEUP_BUILD_GRAMMAR, grammarId);
+            } else {
+                BDebug.w(TAG, "语法构建失败,错误码：" + error.getErrorCode());
+            }
+        }
+    };
+
+    /**
+     * 唤醒监听
+     */
     private WakeuperListener mWakeuperListner = new WakeuperListener() {
         @Override
         public void onBeginOfSpeech() {
@@ -559,6 +588,7 @@ public class EUExXunfei extends EUExBase {
         if (voiceWakeuper != null) {
 
             // 设置唤醒模式
+            mWakeupMode = "wakeup";
             voiceWakeuper.setParameter(SpeechConstant.IVW_SST, "wakeup");
 
             voiceWakeuper.startListening(mWakeuperListner);
@@ -569,7 +599,11 @@ public class EUExXunfei extends EUExBase {
 
     private void callbackWakeupResult(WakeuperResult results) {
         String resultString = results.getResultString();
-        callBackPluginJs(JsConst.ON_WAKEUP_RESULT, resultString);
+        if ("wakeup".equals(mWakeupMode)) {
+            callBackPluginJs(JsConst.ON_WAKEUP_RESULT, resultString);
+        } else {
+            callBackPluginJs(JsConst.ON_WAKEUP_ONESHOT_RESULT, resultString);
+        }
     }
 
     public void stopWakeuper(String[] params) {
@@ -584,56 +618,78 @@ public class EUExXunfei extends EUExBase {
         VoiceWakeuper voiceWakeuper = VoiceWakeuper.getWakeuper();
         if (voiceWakeuper != null) {
             // 设置唤醒模式
-            voiceWakeuper.setParameter(SpeechConstant.IVW_SST, "oneshot");
+            mWakeupMode = "oneshot";
+            voiceWakeuper.setParameter(SpeechConstant.IVW_SST, mWakeupMode);
+            // 目前仅支持云识别，本地识别未开发
+            String asrEngineType = SpeechConstant.TYPE_CLOUD;
+            mEngineType = asrEngineType;
+            //设置识别引擎，只影响唤醒后的识别（唤醒本身只有离线类型）
+            voiceWakeuper.setParameter( SpeechConstant.ENGINE_TYPE, asrEngineType );
+            if( SpeechConstant.TYPE_CLOUD.equals(asrEngineType) ){
+                //设置在线识别的语法ID
+                voiceWakeuper.setParameter(SpeechConstant.CLOUD_GRAMMAR, mCloudGrammarID);
+            }else{
+                // TODO 本地识别模式，暂未封装
+//                String jetPath = json.getString("asrJetPath");
+//                String asrResPath = BUtility.makeRealPath(jetPath, mBrwView);
+//                if (!TextUtils.isEmpty(asrResPath) && asrResPath.startsWith("widget/")) {
+//                    asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.assets, asrResPath);
+//                } else {
+//                    asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.path, asrResPath);
+//                }
+//                BDebug.i(TAG, "setWakeUpBuildGrammar asrResPath: " + asrResPath);
+            }
             voiceWakeuper.startListening(mWakeuperListner);
         } else {
-            BDebug.w(TAG, "startWakeuper error: 唤醒未初始化");
+            BDebug.w(TAG, "startWakeuperOneshot error: 唤醒未初始化");
         }
     }
 
     public void setWakeUpBuildGrammar(String[] params) {
-        String anbfPath = null;
-        String jetPath = null;
         if (params.length < 1) {
             BDebug.w(TAG, "setWakeUpBuildGrammar failed: params.length < 1");
             return;
         }
         // 初始化唤醒对象
-        VoiceWakeuper voiceWakeuper = VoiceWakeuper.getWakeuper();
+        SpeechRecognizer speechRecognizer = SpeechRecognizer.getRecognizer();
         try {
             // 开始设置参数
             JSONObject json = new JSONObject(params[0]);
-            anbfPath = json.getString("filePath");
-            String jetAnbfPath = BUtility.makeRealPath(anbfPath, mBrwView);
-            if (!TextUtils.isEmpty(jetAnbfPath) && jetAnbfPath.startsWith("widget/")) {
-                jetAnbfPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.assets, jetAnbfPath);
-            } else {
-                jetAnbfPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.path, jetAnbfPath);
-            }
-            BDebug.i(TAG, "setWakeUpBuildGrammar jetAnbfPath: " + jetAnbfPath);
+            String filePath = json.getString("filePath");
+            String grammarFileContent;
+            String grammarPath = BUtility.makeRealPath(filePath, mBrwView);
+            grammarFileContent = FileUtils.readFile(mContext, grammarPath);
+            BDebug.i(TAG, "setWakeUpBuildGrammar grammarPath: " + grammarPath);
 
-            jetPath = json.getString("asrJetPath");
-            String asrResPath = BUtility.makeRealPath(jetPath, mBrwView);
-            if (!TextUtils.isEmpty(asrResPath) && asrResPath.startsWith("widget/")) {
-                asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.assets, asrResPath);
-            } else {
-                asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.path, asrResPath);
-            }
-            BDebug.i(TAG, "setWakeUpBuildGrammar asrResPath: " + asrResPath);
-
-            String asrEngineType = SpeechConstant.TYPE_LOCAL;
+            String asrEngineType = SpeechConstant.TYPE_CLOUD;
+            mEngineType = asrEngineType;
             //设置识别引擎，只影响唤醒后的识别（唤醒本身只有离线类型）
-            voiceWakeuper.setParameter( SpeechConstant.ENGINE_TYPE, asrEngineType );
-//            if( SpeechConstant.TYPE_CLOUD.equals(asrEngineType) ){
-//                //设置在线识别的语法ID
-//                voiceWakeuper.setParameter( SpeechConstant.CLOUD_GRAMMAR, grammarID );
-//            }else{
-            // 设置本地识别资源
-            voiceWakeuper.setParameter( ResourceUtil.ASR_RES_PATH, asrResPath );
-            // 设置语法构建路径
-            voiceWakeuper.setParameter( ResourceUtil.GRM_BUILD_PATH, jetAnbfPath );
-//            }
-        } catch (JSONException e) {
+            speechRecognizer.setParameter(SpeechConstant.ENGINE_TYPE, asrEngineType);
+            speechRecognizer.setParameter(SpeechConstant.TEXT_ENCODING, "utf-8");
+            int ret = 0;
+            if( SpeechConstant.TYPE_CLOUD.equals(asrEngineType) ){
+                //设置在线识别的语法ID
+                speechRecognizer.setParameter(SpeechConstant.CLOUD_GRAMMAR, mCloudGrammarID);
+                // 开始构建语法，语法构建回调要去grammarListener中接收
+                ret = speechRecognizer.buildGrammar("abnf", grammarFileContent, grammarListener);
+            }else{
+                // TODO 构建本地识别语法，暂未完善开发和测试
+                String jetPath = json.getString("asrJetPath");
+                String asrResPath = BUtility.makeRealPath(jetPath, mBrwView);
+                if (!TextUtils.isEmpty(asrResPath) && asrResPath.startsWith("widget/")) {
+                    asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.assets, asrResPath);
+                } else {
+                    asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.path, asrResPath);
+                }
+                BDebug.i(TAG, "setWakeUpBuildGrammar asrResPath: " + asrResPath);
+                // 设置本地识别资源
+                speechRecognizer.setParameter(ResourceUtil.ASR_RES_PATH, asrResPath);
+                // 设置语法构建路径
+                speechRecognizer.setParameter(ResourceUtil.GRM_BUILD_PATH, "TODO 这里应该指定一个本地可写入的文件位置");
+                // 开始构建语法
+                ret = speechRecognizer.buildGrammar("bnf", grammarFileContent, grammarListener);
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
