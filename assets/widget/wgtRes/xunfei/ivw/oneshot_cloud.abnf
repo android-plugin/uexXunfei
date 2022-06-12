@@ -3,6 +3,7 @@ language zh-CN;
 mode voice;
 
 root $main;
-$main = $call $name;
-$call = 叮咚叮咚;
-$name = 狗子|大宸|二宸;
+$main = $call $action $suffix;
+$call = 你好小鹏鹏;
+$action = 听到|明白|了解;
+$suffix = 了吗
