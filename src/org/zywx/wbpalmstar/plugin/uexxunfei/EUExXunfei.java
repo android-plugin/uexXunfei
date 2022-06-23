@@ -135,7 +135,7 @@ public class EUExXunfei extends EUExBase {
         }
         mCallbackWinName = mBrwView.getWindowName();
         if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(Manifest.permission.RECORD_AUDIO, "请先申请权限"
+            requsetPerssions(Manifest.permission.RECORD_AUDIO, "请先申请权限"
                     + Manifest.permission.RECORD_AUDIO, REQUEST_CODE_RECORD_AUDIO_PERMISSION);
         } else {
             initMsg(params);
@@ -495,6 +495,7 @@ public class EUExXunfei extends EUExBase {
                 callBackPluginJs(JsConst.ON_SET_WAKEUP_BUILD_GRAMMAR, grammarId);
             } else {
                 BDebug.w(TAG, "语法构建失败,错误码：" + error.getErrorCode());
+                callBackPluginJs(JsConst.ON_SET_WAKEUP_BUILD_GRAMMAR, "");
             }
         }
     };
