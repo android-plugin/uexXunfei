@@ -1,8 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <uexplugins>
     <plugin
-        uexName="uexXunfei" version="4.4.5" build="2022062301">
-        <info>5:修复唤醒相关方法未声明的问题；</info>
+        uexName="uexXunfei" version="4.4.6" build="2022071001">
+        <info>6:插件包补充ivw的so，修改构建语法接口的回调格式，可以区分成功和失败</info>
+        <build>5:修复唤醒相关方法未声明的问题；</build>
         <build>4:完善唤醒加识别语法配置等接口</build>
         <build>3:增加了语音唤醒相关功能API</build>
         <build>2:升级SDK（2022-03-27下载最新版）</build>
