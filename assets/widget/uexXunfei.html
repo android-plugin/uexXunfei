@@ -9,7 +9,9 @@
     <script type="text/javascript">
     function init(){
         var params = {
-            appID:"4a95d0b3"
+            //appID:"4a95d0b3"
+            //appID:"905cb99d"
+            appID:"202caf89"
         };
         var data = JSON.stringify(params);
         uexXunfei.init(data, function(error) {
@@ -41,7 +43,7 @@
         
         function initWakeuper(){
             var params = {
-                wakupEnginPath:"res://xunfei/ivw/4a95d0b3.jet"
+                wakupEnginPath:"res://xunfei/ivw/202caf89.jet"
             };
             var data = JSON.stringify(params);
             uexXunfei.initWakeuper(data);
@@ -64,7 +66,18 @@
             uexXunfei.stopWakeuper(data);
         }
         
-        function startWakeuperOneshot(){
+        function startWakeuperOneshotLocal(){
+            var params = {
+                //text:"this is wuhan university of science and technology,college english test band four!"
+                text:"",
+                engineType:"local",
+                asrJetPath:"res://xunfei/asr/common.jet",
+            };
+            var data = JSON.stringify(params);
+            uexXunfei.startWakeuperOneshot(data);
+        }
+
+        function startWakeuperOneshotCloud(){
             var params = {
                 //text:"this is wuhan university of science and technology,college english test band four!"
                 text:""
@@ -72,7 +85,18 @@
             var data = JSON.stringify(params);
             uexXunfei.startWakeuperOneshot(data);
         }
-        function setWakeUpBuildGrammar(){
+        function setWakeUpBuildGrammarLocal(){
+            var params = {
+                //text:"this is wuhan university of science and technology,college english test band four!"
+                text:"",
+                engineType:"local",
+                asrJetPath:"res://xunfei/asr/common.jet",
+                filePath:"res://xunfei/ivw/oneshot_local.bnf"
+            };
+            var data = JSON.stringify(params);
+            uexXunfei.setWakeUpBuildGrammar(data);
+        }
+        function setWakeUpBuildGrammarCloud(){
             var params = {
                 //text:"this is wuhan university of science and technology,college english test band four!"
                 text:"",
@@ -130,6 +154,7 @@
                 uexXunfei.onRecognizeResult = onRecognizeResult;
                 //uexXunfei.onreadLocalSouceResult = onreadLocalSouceResult;
                 uexXunfei.onWakeupOneshotResult = onWakeupOneshotResult;
+                uexXunfei.onWakeupRecognizeResult = onWakeupRecognizeResult;
                 uexXunfei.onWakeupResult = onWakeupResult;
                 uexXunfei.onWakeupError = onWakeupError;
                 uexXunfei.onSetWakeUpBuildGrammar = onSetWakeUpBuildGrammar;
@@ -197,6 +222,22 @@
            }
         }
 
+        function onWakeupRecognizeResult(info){
+           alert('onWakeupRecognizeResult:'+info);
+           var wakeupRecognizeContent = ""
+           var data = JSON.parse(info);
+           var infoArr = data.ws;
+           var isLast = data.ls;
+           for (var i=0,len=infoArr.length; i<len; i++)
+           {
+               var text = infoArr[i].cw[0].w;
+               wakeupRecognizeContent += text;
+           }
+           if(isLast){
+              alert('onWakeupRecognizeResult end:' + wakeupRecognizeContent);
+           }
+        }
+
     </script>
 </head>
 
@@ -217,9 +258,11 @@
         <input class='btn' type='button' value='initWakeuper' onclick='initWakeuper()'>
         <input class='btn' type='button' value='startWakeuper' onclick='startWakeuper()'>
         <input class='btn' type='button' value='stopWakeuper' onclick='stopWakeuper()'>
-        <input class='btn' type='button' value='startWakeuperOneshot' onclick='startWakeuperOneshot()'>
-        <input class='btn' type='button' value='setWakeUpBuildGrammar' onclick='setWakeUpBuildGrammar()'>
-            
+        <input class='btn' type='button' value='startWakeuperOneshot_CLOUD' onclick='startWakeuperOneshotCloud()'>
+        <input class='btn' type='button' value='startWakeuperOneshot_LOCAL' onclick='startWakeuperOneshotLocal()'>
+        <input class='btn' type='button' value='setWakeUpBuildGrammar_CLOUD' onclick='setWakeUpBuildGrammarCloud()'>
+        <input class='btn' type='button' value='setWakeUpBuildGrammar_LOCAL' onclick='setWakeUpBuildGrammarLocal()'>
+
             
 
 
