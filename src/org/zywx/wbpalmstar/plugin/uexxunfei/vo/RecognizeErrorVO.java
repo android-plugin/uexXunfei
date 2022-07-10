@@ -26,6 +26,7 @@ import java.io.Serializable;
  */
 public class RecognizeErrorVO implements Serializable {
 
+    public int code;
     public String error;
 
 }

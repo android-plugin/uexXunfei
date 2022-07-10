@@ -18,6 +18,7 @@ import com.iflytek.cloud.RecognizerListener;
 import com.iflytek.cloud.RecognizerResult;
 import com.iflytek.cloud.SpeechConstant;
 import com.iflytek.cloud.SpeechError;
+import com.iflytek.cloud.SpeechEvent;
 import com.iflytek.cloud.SpeechRecognizer;
 import com.iflytek.cloud.SpeechSynthesizer;
 import com.iflytek.cloud.SpeechUtility;
@@ -69,6 +70,9 @@ public class EUExXunfei extends EUExBase {
     private String[] mInitParams;
     private int mInitCallbackId = -1;
     EBrowserView eBrowserView;
+
+    private String mGrammarBuildPath;
+
     private HashMap<String, String> mIatResults = new LinkedHashMap<String, String>();
     private RecognizerListener mRecognizerListener = new RecognizerListener() {
         @Override
@@ -112,6 +116,7 @@ public class EUExXunfei extends EUExBase {
     public EUExXunfei(Context context, EBrowserView eBrowserView) {
         super(context, eBrowserView);
         this.eBrowserView = eBrowserView;
+        mGrammarBuildPath = mContext.getExternalFilesDir("uexXunfei").getAbsolutePath() + "/GrammarBuildPath";
     }
 
     @Override
@@ -492,10 +497,26 @@ public class EUExXunfei extends EUExBase {
                     mLocalGrammarID = grammarId;
                 }
                 BDebug.i(TAG, "语法构建成功：" + grammarId);
-                callBackPluginJs(JsConst.ON_SET_WAKEUP_BUILD_GRAMMAR, grammarId);
+                JSONObject grammar = new JSONObject();
+                try {
+                    grammar.put("code", "");
+                    grammar.put("error", "");
+                    grammar.put("grammarId", grammarId);
+                } catch (JSONException ex) {
+                    ex.printStackTrace();
+                }
+                callBackPluginJs(JsConst.ON_SET_WAKEUP_BUILD_GRAMMAR, grammar.toString());
             } else {
                 BDebug.w(TAG, "语法构建失败,错误码：" + error.getErrorCode());
-                callBackPluginJs(JsConst.ON_SET_WAKEUP_BUILD_GRAMMAR, "");
+                JSONObject grammar = new JSONObject();
+                try {
+                    grammar.put("code", error.getErrorCode());
+                    grammar.put("error", error.getErrorDescription());
+                    grammar.put("grammarId", "");
+                } catch (JSONException ex) {
+                    ex.printStackTrace();
+                }
+                callBackPluginJs(JsConst.ON_SET_WAKEUP_BUILD_GRAMMAR, grammar.toString());
             }
         }
     };
@@ -519,13 +540,21 @@ public class EUExXunfei extends EUExBase {
         public void onError(SpeechError speechError) {
             BDebug.i(TAG, "WakeuperListener", "onError", speechError.getErrorCode(), speechError.getErrorDescription());
             RecognizeErrorVO errorVO = new RecognizeErrorVO();
+            errorVO.code = speechError.getErrorCode();
             errorVO.error = speechError.getErrorDescription();
             callBackPluginJs(JsConst.ON_WAKEUP_ERROR, DataHelper.gson.toJson(errorVO));
         }
 
         @Override
-        public void onEvent(int i, int i1, int i2, Bundle bundle) {
-            BDebug.i(TAG, "WakeuperListener", "onEvent");
+        public void onEvent(int eventType, int isLast, int arg2, Bundle obj) {
+            BDebug.i(TAG, "WakeuperListener", "onEvent = ", "eventType:" + eventType + "arg1:" + isLast + "arg2:" + arg2);
+            // 识别结果
+            if (SpeechEvent.EVENT_IVW_RESULT == eventType) {
+                RecognizerResult result = ((RecognizerResult) obj.get(SpeechEvent.KEY_EVENT_IVW_RESULT));
+//                mRecoString += JsonParser.parseGrammarResult(result.getResultString());
+                BDebug.i(TAG, "EVENT_IVW_RESULT: ", JsonParser.parseGrammarResult(result.getResultString()));
+                callBackPluginJs(JsConst.ON_WAKEUP_RECOGNIZE_RESULT, result.getResultString());
+            }
         }
 
         @Override
@@ -616,33 +645,59 @@ public class EUExXunfei extends EUExBase {
     }
 
     public void startWakeuperOneshot(String[] params) {
-        VoiceWakeuper voiceWakeuper = VoiceWakeuper.getWakeuper();
-        if (voiceWakeuper != null) {
-            // 设置唤醒模式
-            mWakeupMode = "oneshot";
-            voiceWakeuper.setParameter(SpeechConstant.IVW_SST, mWakeupMode);
-            // 目前仅支持云识别，本地识别未开发
-            String asrEngineType = SpeechConstant.TYPE_CLOUD;
-            mEngineType = asrEngineType;
-            //设置识别引擎，只影响唤醒后的识别（唤醒本身只有离线类型）
-            voiceWakeuper.setParameter( SpeechConstant.ENGINE_TYPE, asrEngineType );
-            if( SpeechConstant.TYPE_CLOUD.equals(asrEngineType) ){
-                //设置在线识别的语法ID
-                voiceWakeuper.setParameter(SpeechConstant.CLOUD_GRAMMAR, mCloudGrammarID);
-            }else{
-                // TODO 本地识别模式，暂未封装
-//                String jetPath = json.getString("asrJetPath");
-//                String asrResPath = BUtility.makeRealPath(jetPath, mBrwView);
-//                if (!TextUtils.isEmpty(asrResPath) && asrResPath.startsWith("widget/")) {
-//                    asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.assets, asrResPath);
-//                } else {
-//                    asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.path, asrResPath);
-//                }
-//                BDebug.i(TAG, "setWakeUpBuildGrammar asrResPath: " + asrResPath);
+        try {
+            JSONObject json = new JSONObject(params[0]);
+            VoiceWakeuper voiceWakeuper = VoiceWakeuper.getWakeuper();
+            if (voiceWakeuper != null) {
+                // 设置唤醒模式
+                mWakeupMode = "oneshot";
+                voiceWakeuper.setParameter(SpeechConstant.IVW_SST, mWakeupMode);
+                // 目前仅支持云识别，本地识别未开发
+                String asrEngineType = SpeechConstant.TYPE_CLOUD;
+                asrEngineType = json.optString("engineType", asrEngineType);
+                mEngineType = asrEngineType;
+                //设置识别引擎，只影响唤醒后的识别（唤醒本身只有离线类型）
+                voiceWakeuper.setParameter(SpeechConstant.ENGINE_TYPE, asrEngineType);
+                if( SpeechConstant.TYPE_CLOUD.equals(asrEngineType) ){
+                    //设置在线识别的语法ID
+                    voiceWakeuper.setParameter(SpeechConstant.CLOUD_GRAMMAR, mCloudGrammarID);
+                }else{
+                    String jetPath = json.getString("asrJetPath");
+                    String asrResPath = BUtility.makeRealPath(jetPath, mBrwView);
+                    if (!TextUtils.isEmpty(asrResPath) && asrResPath.startsWith("widget/")) {
+                        asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.assets, asrResPath);
+                    } else {
+                        asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.path, asrResPath);
+                    }
+                    if (!TextUtils.isEmpty(asrResPath) && asrResPath.startsWith("widget/")) {
+                        asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.assets, asrResPath);
+                    } else {
+                        asrResPath = ResourceUtil.generateResourcePath(mContext, ResourceUtil.RESOURCE_TYPE.path, asrResPath);
+                    }
+                    BDebug.i(TAG, "startWakeuperOneshot asrResPath: " + asrResPath);
+                    // 设置本地识别资源
+                    voiceWakeuper.setParameter(ResourceUtil.ASR_RES_PATH,
+                            asrResPath);
+                    // 设置语法构建路径
+                    voiceWakeuper.setParameter(ResourceUtil.GRM_BUILD_PATH, mGrammarBuildPath);
+                    // 设置本地识别使用语法id
+                    voiceWakeuper.setParameter(SpeechConstant.LOCAL_GRAMMAR, mLocalGrammarID);
+                }
+                voiceWakeuper.startListening(mWakeuperListner);
+            } else {
+                BDebug.w(TAG, "startWakeuperOneshot error: 唤醒未初始化");
+                JSONObject result = new JSONObject();
+                try {
+                    result.put("code", "AppCan");
+                    result.put("error", "错误：唤醒未初始化");
+                } catch (JSONException ex) {
+                    ex.printStackTrace();
+                }
+                callBackPluginJs(JsConst.ON_WAKEUP_ONESHOT_RESULT, result.toString());
             }
-            voiceWakeuper.startListening(mWakeuperListner);
-        } else {
-            BDebug.w(TAG, "startWakeuperOneshot error: 唤醒未初始化");
+        } catch (Exception e) {
+            Log.w(TAG, "startWakeuperOneshot", e);
+            callBackPluginJs(JsConst.ON_WAKEUP_ONESHOT_RESULT, "{}");
         }
     }
 
@@ -663,6 +718,7 @@ public class EUExXunfei extends EUExBase {
             BDebug.i(TAG, "setWakeUpBuildGrammar grammarPath: " + grammarPath);
 
             String asrEngineType = SpeechConstant.TYPE_CLOUD;
+            asrEngineType = json.optString("engineType", asrEngineType);
             mEngineType = asrEngineType;
             //设置识别引擎，只影响唤醒后的识别（唤醒本身只有离线类型）
             speechRecognizer.setParameter(SpeechConstant.ENGINE_TYPE, asrEngineType);
@@ -686,12 +742,22 @@ public class EUExXunfei extends EUExBase {
                 // 设置本地识别资源
                 speechRecognizer.setParameter(ResourceUtil.ASR_RES_PATH, asrResPath);
                 // 设置语法构建路径
-                speechRecognizer.setParameter(ResourceUtil.GRM_BUILD_PATH, "TODO 这里应该指定一个本地可写入的文件位置");
+                speechRecognizer.setParameter(ResourceUtil.GRM_BUILD_PATH, mGrammarBuildPath);
                 // 开始构建语法
                 ret = speechRecognizer.buildGrammar("bnf", grammarFileContent, grammarListener);
             }
         } catch (Exception e) {
             e.printStackTrace();
+            BDebug.w(TAG, "语法构建失败,错误码：插件参数处理错误");
+            JSONObject grammar = new JSONObject();
+            try {
+                grammar.put("code", "AppCan");
+                grammar.put("error", "语法构建失败,错误码：插件参数处理错误");
+                grammar.put("grammarId", "");
+            } catch (JSONException ex) {
+                ex.printStackTrace();
+            }
+            callBackPluginJs(JsConst.ON_SET_WAKEUP_BUILD_GRAMMAR, grammar.toString());
         }
     }
 
